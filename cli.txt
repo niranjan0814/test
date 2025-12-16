@@ -1,0 +1,3 @@
+cd FinCore-System
+cd fincore-app
+cd fincore-api
