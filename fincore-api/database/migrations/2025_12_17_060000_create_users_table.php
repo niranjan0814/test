@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('staff_id')->constrained('staffs')->cascadeOnDelete();
+            $table->string('user_name')->unique(); // e.g. SA0001
+            $table->string('role')->nullable(); // 'super_admin', 'admin', or null (for staff/others) 
+            $table->string('email')->unique()->nullable(); // New field
             $table->string('password');
-            $table->string('digital_sign')->nullable();
-            $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
-            $table->foreignId('center_id')->constrained('centers')->cascadeOnDelete();
+            $table->string('digital_signature')->nullable(); // Renamed from digital_sign
+            $table->boolean('is_active')->default(true);
+            $table->integer('failed_login_attempts')->default(0);
+
             $table->timestamps();
         });
 

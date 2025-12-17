@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Staff extends Model
 {
+    protected $table = 'staffs';
+
+    // ✅ IMPORTANT FOR OPTION 2
+    protected $primaryKey = 'staff_id';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     protected $fillable = [
         'staff_id',
         'email_id',
@@ -24,6 +31,8 @@ class Staff extends Model
         'companies',
         'basic_salary',
         'leave_details',
+        'branch_id',
+        'center_id',
     ];
 
     protected $casts = [

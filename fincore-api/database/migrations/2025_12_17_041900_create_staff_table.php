@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('staffs', function (Blueprint $table) {
-    $table->id();
-    $table->string('staff_id')->unique()->nullable();
+    $table->string('staff_id')->primary();
     $table->string('email_id')->unique();
     $table->string('account_status')->default('active');
     $table->string('contact_no')->nullable();
@@ -30,6 +29,12 @@ return new class extends Migration
     $table->json('complaints')->nullable();
     $table->decimal('basic_salary', 10, 2)->nullable();
     $table->json('leave_details')->nullable();
+    
+    // Moved from users table
+    // Note: defined as unsignedBigInteger to avoid constraint errors if tables don't exist yet
+    $table->unsignedBigInteger('branch_id')->nullable(); 
+    $table->unsignedBigInteger('center_id')->nullable();
+
     $table->timestamps();
 });
     }
@@ -39,6 +44,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('staff');
+        Schema::dropIfExists('staffs');
     }
 };

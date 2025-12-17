@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('centers', function (Blueprint $table) {
+    Schema::create('centers', function (Blueprint $table) {
     $table->id();
     $table->string('CSU_id')->unique()->nullable();
     $table->json('open_days')->nullable();
@@ -20,8 +20,11 @@ return new class extends Migration
           ->constrained('branches')
           ->cascadeOnDelete();
 
-    $table->foreignId('staff_id')
-          ->constrained('staffs')
+    // ✅ STRING FK to staffs.staff_id
+    $table->string('staff_id');
+    $table->foreign('staff_id')
+          ->references('staff_id')
+          ->on('staffs')
           ->cascadeOnDelete();
 
     $table->string('center_name');
@@ -30,6 +33,7 @@ return new class extends Migration
     $table->integer('group_count')->default(0);
     $table->timestamps();
 });
+
     }
 
     /**
