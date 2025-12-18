@@ -66,28 +66,47 @@ class AdminController extends Controller
     }
 
     /**
-     * Toggle Admin Status (Active/Inactive).
+     * Update Admin details (email, password, status).
      */
-    public function toggleStatus(Request $request, $id)
+    public function update(Request $request, $id)
     {
         $user = User::where('role', 'admin')->findOrFail($id);
 
-        $user->is_active = !$user->is_active;
-        if ($user->is_active) {
-            $user->failed_login_attempts = 0; // Reset failures on reactivation
-        }
-        $user->save();
+        $validated = $request->validate([
+            'email' => [
+                'nullable',
+                'email',
+                Rule::unique('users', 'email')->ignore($user->id)
+            ],
+            'password' => 'nullable|string|min:8',
+            'is_active' => 'nullable|boolean',
+        ]);
 
-        $status = $user->is_active ? 'activated' : 'deactivated';
+        // Update email if provided
+        if (isset($validated['email'])) {
+            $user->email = $validated['email'];
+        }
+
+        // Update password if provided
+        if (isset($validated['password'])) {
+            $user->password = $validated['password']; // Will be hashed by model
+        }
+
+        // Update status if provided
+        if (isset($validated['is_active'])) {
+            $user->is_active = $validated['is_active'];
+            // Reset failed attempts if reactivating
+            if ($user->is_active) {
+                $user->failed_login_attempts = 0;
+            }
+        }
+
+        $user->save();
 
         return response()->json([
             'status' => 'success',
-            'message' => "Admin user {$status} successfully",
-            'data' => [
-                'id' => $user->id,
-                'user_name' => $user->user_name,
-                'is_active' => $user->is_active
-            ]
+            'message' => 'Admin updated successfully',
+            'data' => $user
         ]);
     }
 }

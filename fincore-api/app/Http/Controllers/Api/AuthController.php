@@ -14,11 +14,14 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'user_name' => 'required|string',
+            'login' => 'required|string', // Can be user_name or email
             'password' => 'required|string',
         ]);
 
-        $user = User::where('user_name', $request->user_name)->first();
+        // Try to find user by user_name OR email
+        $user = User::where('user_name', $request->login)
+                    ->orWhere('email', $request->login)
+                    ->first();
 
         // 1. Check if user exists
         if (!$user) {

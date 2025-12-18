@@ -19,6 +19,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('is_super_admin')->group(function () {
         Route::post('/admins', [\App\Http\Controllers\Api\AdminController::class, 'store']);
         Route::get('/admins', [\App\Http\Controllers\Api\AdminController::class, 'index']);
-        Route::patch('/admins/{id}/toggle-status', [\App\Http\Controllers\Api\AdminController::class, 'toggleStatus']);
+        Route::put('/admins/{id}', [\App\Http\Controllers\Api\AdminController::class, 'update']);
+    });
+
+    // Admin Routes (both admin and super_admin can access)
+    Route::middleware('is_admin')->group(function () {
+        Route::post('/staffs', [\App\Http\Controllers\Api\StaffController::class, 'store']);
+        Route::get('/staffs', [\App\Http\Controllers\Api\StaffController::class, 'index']);
+        Route::put('/staffs/{staff_id}', [\App\Http\Controllers\Api\StaffController::class, 'update']);
     });
 });

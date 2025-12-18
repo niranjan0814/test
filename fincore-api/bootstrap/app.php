@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(HandleCors::class);
         $middleware->alias([
             'is_super_admin' => \App\Http\Middleware\EnsureUserIsSuperAdmin::class,
+            'is_admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
     })
 
