@@ -2,108 +2,141 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseController;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
-class AuthController extends Controller
+class AuthController extends BaseController
 {
-    public function login(Request $request)
+    public function __construct()
     {
-        $request->validate([
-            'login' => 'required|string', // Can be user_name or email
-            'password' => 'required|string',
-        ]);
-
-        // Try to find user by user_name OR email
-        $user = User::where('user_name', $request->login)
-                    ->orWhere('email', $request->login)
-                    ->first();
-
-        // 1. Check if user exists
-        if (!$user) {
-            return response()->json([
-                'statusCode' => 4010,
-                'message' => 'Invalid username or password'
-            ], 401);
-        }
-
-        // 2. Check if account is active
-
-        if (!$user->is_active) {
-            // Check if blocked by Super Admin (Admin role, failed attempts < 3)
-            // This implies manual block rather than auto-lockout
-            if ($user->role === 'admin' && $user->failed_login_attempts < 3) {
-                 return response()->json([
-                     'statusCode' => 4230,
-                     'message' => 'Super Admin blocked your account. contact please'
-                 ], 423);
-            }
-
-            return response()->json([
-                'statusCode' => 4230,
-                'message' => 'Account locked due to multiple failed attempts'
-            ], 423);
-        }
-
-        // 3. Verify Password
-        if (!Hash::check($request->password, $user->password)) {
-            // Increment failed attempts
-            $user->increment('failed_login_attempts');
-
-            // Check thresholds
-            if ($user->failed_login_attempts >= 3) {
-                $user->update(['is_active' => false]);
-                return response()->json([
-                    'statusCode' => 4230,
-                    'message' => 'Account locked due to multiple failed attempts'
-                ], 423);
-            }
-
-            if ($user->failed_login_attempts == 2) {
-                return response()->json([
-                    'statusCode' => 4010,
-                    'message' => 'Invalid credentials. You have only one attempt more'
-                ], 401);
-            }
-
-            return response()->json([
-                'statusCode' => 4010,
-                'message' => 'Invalid username or password'
-            ], 401);
-        }
-
-        // 4. Success: Reset failed attempts logic
-        $user->update(['failed_login_attempts' => 0]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'statusCode' => 2000,
-            'message' => 'Login successful',
-            'data' => [
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'user' => $user
-            ]
+        $this->middleware('auth:sanctum', [
+            'except' => ['login']
         ]);
     }
 
-    public function logout(Request $request)
+    /**
+     * Login using username OR email
+     * Lock account after 3 failed attempts
+     */
+    public function login(Request $request)
     {
-        // Check if user is authenticated
-        if (!$request->user()) {
+        $request->validate([
+            'login'    => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        try {
+            // Find by username OR email
+            $user = User::where('user_name', $request->login)
+                ->orWhere('email', $request->login)
+                ->first();
+
+            if (!$user) {
+                return $this->errorResponse(4010, 'Invalid username or password', 401);
+            }
+
+            // Manual admin block
+            if (!$user->is_active || $user->is_locked) {
+                return $this->errorResponse(
+                    4230,
+                    'Account is blocked. Please contact administrator',
+                    423
+                );
+            }
+
+            // Password validation
+            if (!Hash::check($request->password, $user->password)) {
+                $user->increment('failed_login_attempts');
+
+                if ($user->failed_login_attempts >= 3) {
+                    $user->update([
+                        'is_active' => false,
+                        'is_locked' => true,
+                    ]);
+
+                    return $this->errorResponse(
+                        4230,
+                        'Account locked due to multiple failed attempts',
+                        423
+                    );
+                }
+
+                return $this->errorResponse(
+                    4010,
+                    'Invalid credentials. You have only ' . (3 - $user->failed_login_attempts) . ' attempt(s) left',
+                    401
+                );
+            }
+
+            // Successful login
+            $user->update([
+                'failed_login_attempts' => 0,
+                'is_locked' => false,
+            ]);
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
             return response()->json([
-                'statusCode' => 4010,
-                'message' => 'Session expired. Please login again'
-            ], 401);
+                'statusCode' => 2000,
+                'message' => 'Login successful',
+                'data' => [
+                    'access_token' => $token,
+                    'token_type' => 'Bearer',
+                    'user' => $user,
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Login failed', [
+                'login' => $request->login,
+                'ip' => $request->ip(),
+                'error' => $e->getMessage()
+            ]);
+
+            return $this->errorResponse(5000, 'Authentication failed', 500);
+        }
+    }
+
+    /**
+     * Get authenticated user profile
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return $this->errorResponse(4010, 'Session expired. Please login again', 401);
         }
 
-        // Delete the current access token
-        $request->user()->currentAccessToken()->delete();
+        $user->load(['roles.permissions', 'permissions']);
+
+        return response()->json([
+            'statusCode' => 2000,
+            'message' => 'Profile fetched successfully',
+            'data' => [
+                'user' => $user,
+                'roles' => $user->getRoleNames(),
+                'permissions' => $user->getAllPermissionNames(),
+            ]
+        ], 200);
+    }
+
+    /**
+     * Logout (revoke token)
+     */
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return $this->errorResponse(4010, 'Session expired. Please login again', 401);
+        }
+
+        $user->currentAccessToken()->delete();
 
         return response()->json([
             'statusCode' => 2000,
@@ -112,37 +145,60 @@ class AuthController extends Controller
     }
 
     /**
-     * Get authenticated user profile
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * Check single permission
      */
-    public function profile(Request $request)
+    public function checkPermission(Request $request)
     {
-        // Check if user is authenticated
-        if (!$request->user()) {
-            return response()->json([
-                'statusCode' => 4010,
-                'message' => 'Session expired. Please login again'
-            ], 401);
-        }
+        $request->validate([
+            'permission' => 'required|string'
+        ]);
 
-        $user = $request->user();
-
-        // Check if user profile exists
-        if (!$user) {
-            return response()->json([
-                'statusCode' => 4040,
-                'message' => 'User profile not found'
-            ], 404);
-        }
+        $user = Auth::user();
 
         return response()->json([
             'statusCode' => 2000,
-            'message' => 'Profile details fetched successfully',
+            'message' => 'Permission checked',
             'data' => [
-                'user' => $user
+                'permission' => $request->permission,
+                'has_permission' => $user->hasPermissionTo($request->permission),
             ]
-        ], 200);
+        ]);
+    }
+
+    /**
+     * Check multiple permissions
+     */
+    public function checkAnyPermission(Request $request)
+    {
+        $request->validate([
+            'permissions' => 'required|array',
+            'permissions.*' => 'string'
+        ]);
+
+        $user = Auth::user();
+
+        $matched = collect($request->permissions)
+            ->filter(fn ($p) => $user->hasPermissionTo($p))
+            ->values();
+
+        return response()->json([
+            'statusCode' => 2000,
+            'message' => 'Permissions checked',
+            'data' => [
+                'has_any_permission' => $matched->isNotEmpty(),
+                'matched_permissions' => $matched,
+            ]
+        ]);
+    }
+
+    /**
+     * Unified error response helper
+     */
+    private function errorResponse(int $code, string $message, int $httpCode)
+    {
+        return response()->json([
+            'statusCode' => $code,
+            'message' => $message,
+        ], $httpCode);
     }
 }
