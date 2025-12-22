@@ -15,6 +15,7 @@ class Center extends Model
         'address',
         'staff_id',
         'group_count',
+        'status',
     ];
 
     protected $casts = [

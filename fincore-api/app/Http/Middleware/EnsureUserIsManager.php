@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureUserIsFieldOfficer
+class EnsureUserIsManager
 {
     /**
      * Handle an incoming request.
@@ -15,14 +15,12 @@ class EnsureUserIsFieldOfficer
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Only users with 'field_officer' role
-        if ($request->user() && $request->user()->role === 'field_officer') {
+        if ($request->user() && $request->user()->role === 'manager') {
             return $next($request);
         }
-
         return response()->json([
             'status' => 'error',
-            'message' => 'Unauthorized. Only Field Officers can perform this action.'
+            'message' => 'Unauthorized. Manager access required.'
         ], 403);
     }
 }
