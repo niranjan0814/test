@@ -38,6 +38,7 @@ class Staff extends Model
     protected $casts = [
         'companies' => 'array',
         'leave_details' => 'array',
+        'work_info' => 'array',
         'monthly_target_amount' => 'decimal:2',
         'basic_salary' => 'decimal:2',
     ];

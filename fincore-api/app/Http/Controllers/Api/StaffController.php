@@ -8,6 +8,7 @@ use App\Models\Staff;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class StaffController extends Controller
 {
@@ -16,20 +17,45 @@ class StaffController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'email_id' => 'required|email|unique:staffs,email_id',
+        // 1. Check if Staff already exists (Email or NIC)
+        // We check this manually to return the specific 4090 code
+        if (Staff::where('email_id', $request->email_id)
+                 ->orWhere('nic', $request->nic)
+                 ->exists()) {
+            return response()->json([
+                'statusCode' => 4090,
+                'message' => 'Staff already exists'
+            ], 409);
+        }
+
+        // Custom validation to return 4000 for other issues
+        $validator = Validator::make($request->all(), [
+            'email_id' => 'required|email:filter',
             'account_status' => 'required|string',
             'contact_no' => 'required|string',
             'full_name' => 'required|string',
             'name_with_initial' => 'required|string',
             'address' => 'required|string',
-            'nic' => 'required|string',
-            'work_info' => 'required|json',
-            'age' => 'required|integer',
+            'nic' => ['required', 'string', 'regex:/^([0-9]{9}[x|X|v|V]|[0-9]{12})$/'],
+            'work_info' => 'required',
+            'age' => 'required|integer|min:18|max:80',
             'profile_image' => 'required|string',
             'gender' => 'required|string',
-            'role' => 'nullable|string', // Optional role assignment
+            'role' => 'nullable|string',
+            'basic_salary' => 'nullable|numeric|min:0',
+            'monthly_target_amount' => 'nullable|numeric|min:0',
+            'monthly_target_count' => 'nullable|integer|min:0',
+            'branch_id' => 'nullable|exists:branches,id',
+            'center_id' => 'nullable|exists:centers,id',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'statusCode' => 4000,
+                'message' => 'Staff details are incomplete',
+                'errors' => $validator->errors()
+            ], 400);
+        }
 
         // Auto-generate Staff ID (ST + 4 digits)
         $latestStaff = Staff::where('staff_id', 'LIKE', 'ST%')
@@ -53,25 +79,25 @@ class StaffController extends Controller
             // Create staff record
             $staff = Staff::create([
                 'staff_id' => $newStaffId,
-                'email_id' => $validated['email_id'],
-                'account_status' => $validated['account_status'],
-                'contact_no' => $validated['contact_no'],
-                'full_name' => $validated['full_name'],
-                'name_with_initial' => $validated['name_with_initial'],
-                'address' => $validated['address'],
-                'nic' => $validated['nic'],
-                'work_info' => $validated['work_info'],
-                'age' => $validated['age'],
-                'profile_image' => $validated['profile_image'],
-                'gender' => $validated['gender'],
+                'email_id' => $request->email_id,
+                'account_status' => $request->account_status,
+                'contact_no' => $request->contact_no,
+                'full_name' => $request->full_name,
+                'name_with_initial' => $request->name_with_initial,
+                'address' => $request->address,
+                'nic' => $request->nic,
+                'work_info' => $request->work_info,
+                'age' => $request->age,
+                'profile_image' => $request->profile_image,
+                'gender' => $request->gender,
             ]);
 
             // Create corresponding user record
             $user = User::create([
                 'user_name' => $newStaffId, // staff_id becomes user_name
-                'email' => $validated['email_id'], // email_id becomes email
-                'password' => $validated['nic'], // Default password, staff should change it
-                'role' => $validated['role'] ?? null, // Use provided role or null
+                'email' => $request->email_id, // email_id becomes email
+                'password' => $request->nic, // NIC as default password
+                'role' => $request->role ?? null, // Use provided role or null
                 'digital_signature' => Hash::make($newStaffId),
                 'is_active' => true,
             ]);
@@ -79,7 +105,7 @@ class StaffController extends Controller
             DB::commit();
 
             return response()->json([
-                'status' => 'success',
+                'statusCode' => 2010,
                 'message' => 'Staff created successfully',
                 'data' => [
                     'staff' => $staff,
@@ -103,9 +129,32 @@ class StaffController extends Controller
     {
         $staffs = Staff::all();
         return response()->json([
-            'status' => 'success',
+            'statusCode' => 2000,
+            'message' => 'Staff list fetched successfully',
             'data' => $staffs
-        ]);
+        ], 200);
+    }
+
+    /**
+     * Get Staff By Id.
+     */
+    public function show($staff_id)
+    {
+        // Assuming staff_id is a string like ST0001
+        $staff = Staff::where('staff_id', $staff_id)->first();
+
+        if (!$staff) {
+            return response()->json([
+                'statusCode' => 4040,
+                'message' => 'Staff not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'statusCode' => 2000,
+            'message' => 'Staff details fetched successfully',
+            'data' => $staff
+        ], 200);
     }
 
     /**
@@ -113,26 +162,33 @@ class StaffController extends Controller
      */
     public function update(Request $request, $staff_id)
     {
-        $staff = Staff::findOrFail($staff_id);
+        $staff = Staff::where('staff_id', $staff_id)->first();
+
+        if (!$staff) {
+            return response()->json([
+                'statusCode' => 4040,
+                'message' => 'Staff not found'
+            ], 404);
+        }
 
         $validated = $request->validate([
-            'email_id' => 'nullable|email|unique:staffs,email_id,' . $staff_id . ',staff_id',
+            'email_id' => 'nullable|email:filter|unique:staffs,email_id,' . $staff_id . ',staff_id',
             'account_status' => 'nullable|string',
             'contact_no' => 'nullable|string',
             'full_name' => 'nullable|string',
             'name_with_initial' => 'nullable|string',
             'address' => 'nullable|string',
-            'nic' => 'nullable|string',
-            'work_info' => 'nullable|json',
-            'age' => 'nullable|integer',
+            'nic' => ['nullable', 'string', 'regex:/^([0-9]{9}[x|X|v|V]|[0-9]{12})$/'],
+            'work_info' => 'nullable',
+            'age' => 'nullable|integer|min:18|max:80',
             'profile_image' => 'nullable|string',
             'gender' => 'nullable|string',
-            'monthly_target_amount' => 'nullable|numeric',
-            'monthly_target_count' => 'nullable|integer',
-            'basic_salary' => 'nullable|numeric',
-            'branch_id' => 'nullable|integer',
-            'center_id' => 'nullable|integer',
-            'role' => 'nullable|string', // Can update role later
+            'monthly_target_amount' => 'nullable|numeric|min:0',
+            'monthly_target_count' => 'nullable|integer|min:0',
+            'basic_salary' => 'nullable|numeric|min:0',
+            'branch_id' => 'nullable|exists:branches,id',
+            'center_id' => 'nullable|exists:centers,id',
+            'role' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -155,16 +211,55 @@ class StaffController extends Controller
             DB::commit();
 
             return response()->json([
-                'status' => 'success',
+                'statusCode' => 2000,
                 'message' => 'Staff updated successfully',
                 'data' => $staff
-            ]);
+            ], 200);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to update staff: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete Staff.
+     */
+    public function destroy($staff_id)
+    {
+        $staff = Staff::where('staff_id', $staff_id)->first();
+
+        if (!$staff) {
+            return response()->json([
+                'statusCode' => 4040,
+                'message' => 'Staff not found'
+            ], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Disable or delete associated user logic if needed
+            $user = User::where('user_name', $staff_id)->first();
+            if ($user) {
+                $user->delete();
+            }
+
+            $staff->delete();
+            DB::commit();
+
+            return response()->json([
+                'statusCode' => 2000,
+                'message' => 'Staff deleted successfully'
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete staff: ' . $e->getMessage()
             ], 500);
         }
     }

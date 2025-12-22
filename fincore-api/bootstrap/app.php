@@ -23,6 +23,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
 
-    ->withExceptions(function (Exceptions $exceptions): void {
-        //
+    ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'statusCode' => 4010,
+                    'message' => 'Unauthorized access'
+                ], 401);
+            }
+        });
     })->create();

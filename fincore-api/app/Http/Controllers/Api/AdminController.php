@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
 {
@@ -15,10 +16,27 @@ class AdminController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
+        // Manual validation to return custom 4000 code
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email:filter',
+            'password' => ['required', 'string', 'min:8', 'regex:/[a-z]/', 'regex:/[A-Z]/', 'regex:/[0-9]/', 'regex:/[@$!%*#?&]/'],
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'statusCode' => 4000,
+                'message' => 'Required fields are missing',
+                'errors' => $validator->errors()
+            ], 400);
+        }
+
+        // Check for conflict (4090)
+        if (User::where('email', $request->email)->exists()) {
+            return response()->json([
+                'statusCode' => 4090,
+                'message' => 'Admin already exists'
+            ], 409);
+        }
 
         // Auto-generate User Name (AD + 4 digits)
         $latestAdmin = User::where('user_name', 'LIKE', 'AD%')
@@ -39,62 +57,99 @@ class AdminController extends Controller
 
         $admin = User::create([
             'user_name' => $newUserName,
-            'email' => $validated['email'],
-            'password' => $validated['password'], // Casts to hashed in Model
+            'email' => $request->email,
+            'password' => $request->password, // Casts to hashed in Model
             'role' => 'admin',
             'digital_signature' => Hash::make($newUserName), // Auto-generated from user_name
             'is_active' => true,
         ]);
 
         return response()->json([
-            'status' => 'success',
+            'statusCode' => 2010,
             'message' => 'Admin created successfully',
             'data' => $admin
         ], 201);
     }
 
     /**
-     * List all admins (Optional, for management UI).
+     * List all admins.
      */
     public function index()
     {
         $admins = User::where('role', 'admin')->get();
         return response()->json([
-            'status' => 'success',
+            'statusCode' => 2000,
+            'message' => 'Admin list fetched successfully',
             'data' => $admins
-        ]);
+        ], 200);
     }
 
     /**
-     * Update Admin details (email, password, status).
+     * Get Admin By Id.
+     */
+    public function show($id)
+    {
+        $admin = User::where('role', 'admin')->find($id);
+
+        if (!$admin) {
+            return response()->json([
+                'statusCode' => 4040,
+                'message' => 'Admin not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'statusCode' => 2000,
+            'message' => 'Admin details fetched successfully',
+            'data' => $admin
+        ], 200);
+    }
+
+    /**
+     * Update Admin details.
      */
     public function update(Request $request, $id)
     {
-        $user = User::where('role', 'admin')->findOrFail($id);
+        $user = User::where('role', 'admin')->find($id);
 
-        $validated = $request->validate([
+        if (!$user) {
+            return response()->json([
+                'statusCode' => 4040,
+                'message' => 'Admin not found' // Reusing 4040 from show spec as it's appropriate
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
             'email' => [
                 'nullable',
-                'email',
+                'email:filter',
                 Rule::unique('users', 'email')->ignore($user->id)
             ],
-            'password' => 'nullable|string|min:8',
+            'password' => ['nullable', 'string', 'min:8', 'regex:/[a-z]/', 'regex:/[A-Z]/', 'regex:/[0-9]/', 'regex:/[@$!%*#?&]/'],
             'is_active' => 'nullable|boolean',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'statusCode' => 4000,
+                'message' => 'Invalid admin data',
+                'errors' => $validator->errors()
+            ], 400);
+        }
+
         // Update email if provided
-        if (isset($validated['email'])) {
-            $user->email = $validated['email'];
+        if ($request->has('email')) {
+            $user->email = $request->email;
         }
 
         // Update password if provided
-        if (isset($validated['password'])) {
-            $user->password = $validated['password']; // Will be hashed by model
+        if ($request->has('password')) {
+            $user->password = $request->password;
         }
 
         // Update status if provided
-        if (isset($validated['is_active'])) {
-            $user->is_active = $validated['is_active'];
+        if ($request->has('is_active')) {
+            $user->is_active = $request->is_active;
             // Reset failed attempts if reactivating
             if ($user->is_active) {
                 $user->failed_login_attempts = 0;
@@ -104,9 +159,31 @@ class AdminController extends Controller
         $user->save();
 
         return response()->json([
-            'status' => 'success',
+            'statusCode' => 2000,
             'message' => 'Admin updated successfully',
             'data' => $user
-        ]);
+        ], 200);
+    }
+
+    /**
+     * Delete Admin.
+     */
+    public function destroy($id)
+    {
+        $user = User::where('role', 'admin')->find($id);
+
+        if (!$user) {
+            return response()->json([
+                'statusCode' => 4040,
+                'message' => 'Admin not found'
+            ], 404);
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'statusCode' => 2000,
+            'message' => 'Admin deleted successfully'
+        ], 200);
     }
 }
