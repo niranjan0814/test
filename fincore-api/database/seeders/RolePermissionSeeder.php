@@ -27,10 +27,15 @@ class RolePermissionSeeder extends Seeder
                 ['name' => 'Role Management', 'slug' => 'role-management', 'icon' => 'shield', 'color' => 'green'],
                 ['name' => 'Permission Management', 'slug' => 'permission-management', 'icon' => 'key', 'color' => 'purple'],
                 ['name' => 'Loan Management', 'slug' => 'loan-management', 'icon' => 'money-bill-wave', 'color' => 'yellow'],
-                ['name' => 'Client Management', 'slug' => 'client-management', 'icon' => 'user-friends', 'color' => 'indigo'],
+                //['name' => 'Client Management', 'slug' => 'client-management', 'icon' => 'user-friends', 'color' => 'indigo'],
                 ['name' => 'Dashboard', 'slug' => 'dashboard', 'icon' => 'tachometer-alt', 'color' => 'red'],
                 ['name' => 'Reports', 'slug' => 'reports', 'icon' => 'chart-bar', 'color' => 'orange'],
                 ['name' => 'Settings', 'slug' => 'settings', 'icon' => 'cog', 'color' => 'gray'],
+                ['name' => 'Branch Management', 'slug' => 'branch-management', 'icon' => 'building', 'color' => 'blue'],
+                ['name' => 'Center Management', 'slug' => 'center-management', 'icon' => 'money-bill-wave', 'color' => 'yellow'],
+                ['name' => 'Group Management', 'slug' => 'group-management', 'icon' => 'users', 'color' => 'blue'],
+                ['name' => 'Investment Management', 'slug' => 'investment-management', 'icon' => 'users', 'color' => 'blue'],
+                ['name' => 'Customer Management', 'slug' => 'customer-management', 'icon' => 'users', 'color' => 'blue'],
             ];
 
             foreach ($groups as $group) {
@@ -69,6 +74,35 @@ class RolePermissionSeeder extends Seeder
                 ['name' => 'customers.delete', 'display_name' => 'Delete Customers', 'module' => 'customers', 'permission_group_id' => 5],
                 ['name' => 'customers.import', 'display_name' => 'Import Customers', 'module' => 'customers', 'permission_group_id' => 5],
                 ['name' => 'customers.export', 'display_name' => 'Export Customers', 'module' => 'customers', 'permission_group_id' => 5],
+                //branch management
+                ['name' => 'branches.view', 'display_name' => 'View Branches', 'module' => 'branches', 'permission_group_id' => 1],
+                ['name' => 'branches.create', 'display_name' => 'Create Branches', 'module' => 'branches', 'permission_group_id' => 1],
+                ['name' => 'branches.edit', 'display_name' => 'Edit Branches', 'module' => 'branches', 'permission_group_id' => 1],
+                ['name' => 'branches.delete', 'display_name' => 'Delete Branches', 'module' => 'branches', 'permission_group_id' => 1], 
+
+                //center management
+                ['name' => 'centers.view', 'display_name' => 'View Centers', 'module' => 'centers', 'permission_group_id' => 1],
+                ['name' => 'centers.create', 'display_name' => 'Create Centers', 'module' => 'centers', 'permission_group_id' => 1],
+                ['name' => 'centers.edit', 'display_name' => 'Edit Centers', 'module' => 'centers', 'permission_group_id' => 1],
+                ['name' => 'centers.delete', 'display_name' => 'Delete Centers', 'module' => 'centers', 'permission_group_id' => 1],
+
+                //group management
+                ['name' => 'groups.view', 'display_name' => 'View Groups', 'module' => 'groups', 'permission_group_id' => 1],
+                ['name' => 'groups.create', 'display_name' => 'Create Groups', 'module' => 'groups', 'permission_group_id' => 1],
+                ['name' => 'groups.edit', 'display_name' => 'Edit Groups', 'module' => 'groups', 'permission_group_id' => 1],
+                ['name' => 'groups.delete', 'display_name' => 'Delete Groups', 'module' => 'groups', 'permission_group_id' => 1],
+
+                //investor management
+                ['name' => 'investors.view', 'display_name' => 'View Investors', 'module' => 'investors', 'permission_group_id' => 1],
+                ['name' => 'investors.create', 'display_name' => 'Create Investors', 'module' => 'investors', 'permission_group_id' => 1],
+                ['name' => 'investors.edit', 'display_name' => 'Edit Investors', 'module' => 'investors', 'permission_group_id' => 1],
+                ['name' => 'investors.delete', 'display_name' => 'Delete Investors', 'module' => 'investors', 'permission_group_id' => 1],
+
+                //loan management
+                ['name' => 'loans.view', 'display_name' => 'View Loans', 'module' => 'loans', 'permission_group_id' => 1],
+                ['name' => 'loans.create', 'display_name' => 'Create Loans', 'module' => 'loans', 'permission_group_id' => 1],
+                ['name' => 'loans.edit', 'display_name' => 'Edit Loans', 'module' => 'loans', 'permission_group_id' => 1],
+                ['name' => 'loans.delete', 'display_name' => 'Delete Loans', 'module' => 'loans', 'permission_group_id' => 1],
 
                 // Role Management
                 ['name' => 'roles.view', 'display_name' => 'View Roles', 'module' => 'roles', 'permission_group_id' => 2],
@@ -112,12 +146,33 @@ class RolePermissionSeeder extends Seeder
                     'is_editable' => true,
                     'guard_name' => 'web',
                 ],
+                
+                [
+                    'name' => 'manager',
+                    'display_name' => 'Manager',
+                    'description' => 'Regular manager member',
+                    'level' => 'manager',
+                    'hierarchy' => 100,
+                    'is_system' => false,
+                    'is_editable' => true,
+                    'is_default' => true,
+                    'guard_name' => 'web',
+                ],
+                [
+                    'name' =>'field_officer', 
+                    'display_name' => 'Field Officer', 
+                    'description' => 'Regular field officer member', 
+                    'level' => 'field_officer', 
+                    'hierarchy' => 150, 'is_system' => false, 
+                    'is_editable' => true, 'is_default' => true, 
+                    'guard_name' => 'web'
+                ],
                 [
                     'name' => 'staff',
                     'display_name' => 'Staff',
                     'description' => 'Regular staff member',
                     'level' => 'staff',
-                    'hierarchy' => 100,
+                    'hierarchy' => 200,
                     'is_system' => false,
                     'is_editable' => true,
                     'is_default' => true,
@@ -134,8 +189,65 @@ class RolePermissionSeeder extends Seeder
             $superAdmin->syncPermissions(Permission::all());
 
             $admin = Role::where('name', 'admin')->first();
-            $adminPermissions = Permission::where('module', '!=', 'permissions')->get();
+            $adminPermissions = Permission::where('name', [
+                'dashboard.view',
+                
+                'staff.view',
+                'staff.create',
+                'staff.edit',
+                'staff.delete',
+                
+                'branches.view',
+                'branches.create',
+                'branches.edit',
+                'branches.delete',
+
+                'loan_products.view',
+                'loan_products.create',
+                'loan_products.edit',
+                'loan_products.delete',
+
+                'investment_products.view',
+                'investment_products.create',
+                'investment_products.edit',
+                'investment_products.delete',
+
+                'centers.delete',
+            ])->get();
             $admin->syncPermissions($adminPermissions);
+
+            $manager = Role::where('name', 'manager')->first();
+            $managerPermissions = Permission::where('name', [
+                'dashboard.view',
+                
+
+                'centers.view',
+                
+                'centers.edit',
+                
+            ])->get();
+            $manager->syncPermissions($managerPermissions);
+
+            $field_officer = Role::where('name', 'field_officer')->first();
+            $field_officerPermissions = Permission::where('name', [
+                'dashboard.view',
+                
+                'centers.view',
+                'centers.create',
+                'centers.edit',
+
+                'groups.view',
+                'groups.create',
+                'groups.edit',
+                'groups.delete',
+
+                'customers.view',
+                'customers.create',
+                'customers.edit',
+                'customers.delete',
+                
+            ])->get();
+            $field_officer->syncPermissions($field_officerPermissions);
 
             $staff = Role::where('name', 'staff')->first();
             $staffPermissions = Permission::whereIn('name', [
