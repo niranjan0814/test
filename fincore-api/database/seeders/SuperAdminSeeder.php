@@ -14,7 +14,7 @@ class SuperAdminSeeder extends Seeder
         User::updateOrCreate(
             ['user_name' => 'SA0001'], // ✅ Changed from admin_username
             [
-                'role'              => 'super_admin',
+                
                 'email'             => 'admin@fincore.com', // Optional email
                 'password'          => 'S@1234admin',
                 'digital_signature' => Hash::make('SA0001'), // Renamed field

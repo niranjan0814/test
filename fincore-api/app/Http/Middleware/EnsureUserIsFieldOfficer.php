@@ -15,7 +15,7 @@ class EnsureUserIsFieldOfficer
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Only users with 'field_officer' role
+        // Only users with 'field_officer' role can proceed
         if ($request->user() && $request->user()->role === 'field_officer') {
             return $next($request);
         }

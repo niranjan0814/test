@@ -41,7 +41,7 @@ class StaffController extends Controller
             'age' => 'required|integer|min:18|max:80',
             'profile_image' => 'required|string',
             'gender' => 'required|string',
-            'role' => 'nullable|string',
+            'role_name' => 'nullable|string|exists:roles,name', // Changed from 'role' to 'role_name' and validate against roles table
             'basic_salary' => 'nullable|numeric|min:0',
             'monthly_target_amount' => 'nullable|numeric|min:0',
             'monthly_target_count' => 'nullable|integer|min:0',
@@ -97,10 +97,16 @@ class StaffController extends Controller
                 'user_name' => $newStaffId, // staff_id becomes user_name
                 'email' => $request->email_id, // email_id becomes email
                 'password' => $request->nic, // NIC as default password
-                'role' => $request->role ?? null, // Use provided role or null
                 'digital_signature' => Hash::make($newStaffId),
                 'is_active' => true,
             ]);
+
+            // Assign role using Spatie (default to 'staff' if not provided)
+            $roleName = $request->role_name ?? 'staff';
+            $user->assignRole($roleName);
+
+            // Load roles and permissions for response
+            $user->load(['roles.permissions', 'permissions']);
 
             DB::commit();
 
@@ -188,7 +194,7 @@ class StaffController extends Controller
             'basic_salary' => 'nullable|numeric|min:0',
             'branch_id' => 'nullable|exists:branches,id',
             'center_id' => 'nullable|exists:centers,id',
-            'role' => 'nullable|string',
+            'role_name' => 'nullable|string|exists:roles,name', // Changed from 'role' to 'role_name'
         ]);
 
         DB::beginTransaction();
@@ -202,10 +208,14 @@ class StaffController extends Controller
                 if (isset($validated['email_id'])) {
                     $user->email = $validated['email_id'];
                 }
-                if (isset($validated['role'])) {
-                    $user->role = $validated['role'];
+                if (isset($validated['role_name'])) {
+                    // Sync role using Spatie
+                    $user->syncRoles([$validated['role_name']]);
                 }
                 $user->save();
+
+                // Load roles and permissions for response
+                $user->load(['roles.permissions', 'permissions']);
             }
 
             DB::commit();

@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('user_name')->unique(); // e.g. SA0001
-            $table->string('role')->nullable(); // 'super_admin', 'admin', or null (for staff/others) 
+            $table->string('user_name')->unique(); // e.g. SA000
             $table->string('email')->unique()->nullable(); // New field
             $table->string('password');
             $table->string('digital_signature')->nullable(); // Renamed from digital_sign

@@ -59,10 +59,15 @@ class AdminController extends Controller
             'user_name' => $newUserName,
             'email' => $request->email,
             'password' => $request->password, // Casts to hashed in Model
-            'role' => 'admin',
             'digital_signature' => Hash::make($newUserName), // Auto-generated from user_name
             'is_active' => true,
         ]);
+
+        // Assign admin role using Spatie
+        $admin->assignRole('admin');
+
+        // Load roles and permissions
+        $admin->load(['roles.permissions', 'permissions']);
 
         return response()->json([
             'statusCode' => 2010,
@@ -76,7 +81,10 @@ class AdminController extends Controller
      */
     public function index()
     {
-        $admins = User::where('role', 'admin')->get();
+        $admins = User::role('admin')
+            ->with(['roles.permissions', 'permissions'])
+            ->get();
+            
         return response()->json([
             'statusCode' => 2000,
             'message' => 'Admin list fetched successfully',
@@ -89,7 +97,9 @@ class AdminController extends Controller
      */
     public function show($id)
     {
-        $admin = User::where('role', 'admin')->find($id);
+        $admin = User::role('admin')
+            ->with(['roles.permissions', 'permissions'])
+            ->find($id);
 
         if (!$admin) {
             return response()->json([
@@ -110,7 +120,7 @@ class AdminController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = User::where('role', 'admin')->find($id);
+        $user = User::role('admin')->find($id);
 
         if (!$user) {
             return response()->json([
@@ -158,6 +168,9 @@ class AdminController extends Controller
 
         $user->save();
 
+        // Load roles and permissions
+        $user->load(['roles.permissions', 'permissions']);
+
         return response()->json([
             'statusCode' => 2000,
             'message' => 'Admin updated successfully',
@@ -170,7 +183,7 @@ class AdminController extends Controller
      */
     public function destroy($id)
     {
-        $user = User::where('role', 'admin')->find($id);
+        $user = User::role('admin')->find($id);
 
         if (!$user) {
             return response()->json([

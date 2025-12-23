@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -10,9 +11,26 @@ use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\LoanProductController;
 use App\Http\Controllers\Api\InvestmentProductController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
 
-Route::get('/health', function () {
-    return response()->json(['status' => 'API is healthy', 'service' => 'Laravel']);
+// Public routes (no authentication required)
+// routes/api.php - Update auth routes
+Route::prefix('auth')->group(function () {
+    // Public routes
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register']);
+    
+    // Protected routes
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('me', [AuthController::class, 'me']);
+        Route::get('permissions', [AuthController::class, 'permissions']);
+        Route::post('check-permission', [AuthController::class, 'checkPermission']);
+        Route::post('check-any-permission', [AuthController::class, 'checkAnyPermission']);
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::post('refresh', [AuthController::class, 'refresh']);
+    });
 });
 
 
@@ -22,97 +40,132 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
 
+    // Branch Management
+    Route::prefix('branches')->group(function () {
+        Route::get('/', [BranchController::class, 'index'])->middleware('permission:branches.view');
+        Route::post('/', [BranchController::class, 'store'])->middleware('permission:branches.create');
+        Route::get('/{id}', [BranchController::class, 'show'])->middleware('permission:branches.view');
+        Route::put('/{id}', [BranchController::class, 'update'])->middleware('permission:branches.edit');
+        Route::delete('/{id}', [BranchController::class, 'destroy'])->middleware('permission:branches.delete');
+    });
 
+    // Loan Product Management
+    Route::prefix('loan-products')->group(function () {
+        Route::get('/', [LoanProductController::class, 'index'])->middleware('permission:loan_products.view');
+        Route::get('/filter', [LoanProductController::class, 'filter'])->middleware('permission:loan_products.view');
+        Route::post('/', [LoanProductController::class, 'store'])->middleware('permission:loan_products.create');
+        Route::get('/{id}', [LoanProductController::class, 'show'])->middleware('permission:loan_products.view');
+        Route::put('/{id}', [LoanProductController::class, 'update'])->middleware('permission:loan_products.edit');
+        Route::delete('/{id}', [LoanProductController::class, 'destroy'])->middleware('permission:loan_products.delete');
+    });
+
+    // Investment Product Management
+    Route::prefix('investment-products')->group(function () {
+        Route::get('/', [InvestmentProductController::class, 'index'])->middleware('permission:investment_products.view');
+        Route::get('/filter', [InvestmentProductController::class, 'filter'])->middleware('permission:investment_products.view');
+        Route::post('/', [InvestmentProductController::class, 'store'])->middleware('permission:investment_products.create');
+        Route::get('/{id}', [InvestmentProductController::class, 'show'])->middleware('permission:investment_products.view');
+        Route::put('/{id}', [InvestmentProductController::class, 'update'])->middleware('permission:investment_products.edit');
+        Route::delete('/{id}', [InvestmentProductController::class, 'destroy'])->middleware('permission:investment_products.delete');
+    });
+
+    // Center Management
+    Route::prefix('centers')->group(function () {
+        Route::get('/', [CenterController::class, 'index'])->middleware('permission:centers.view');
+        Route::get('/pending', [CenterController::class, 'pending'])->middleware('permission:centers.view');
+        Route::post('/', [CenterController::class, 'store'])->middleware('permission:centers.create');
+        Route::get('/{id}', [CenterController::class, 'show'])->middleware('permission:centers.view');
+        Route::put('/{id}', [CenterController::class, 'update'])->middleware('permission:centers.edit');
+        Route::patch('/{id}/approve', [CenterController::class, 'approve'])->middleware('permission:centers.approve');
+        Route::delete('/{id}', [CenterController::class, 'destroy'])->middleware('permission:centers.delete');
+    });
+
+    // Group Management
+    Route::prefix('groups')->group(function () {
+        Route::get('/', [GroupController::class, 'index'])->middleware('permission:groups.view');
+        Route::post('/', [GroupController::class, 'store'])->middleware('permission:groups.create');
+        Route::get('/{id}', [GroupController::class, 'show'])->middleware('permission:groups.view');
+        Route::put('/{id}', [GroupController::class, 'update'])->middleware('permission:groups.edit');
+        Route::delete('/{id}', [GroupController::class, 'destroy'])->middleware('permission:groups.delete');
+    });
+
+    // Admin Management
+    Route::prefix('admins')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\AdminController::class, 'index'])->middleware('permission:admins.view');
+        Route::post('/', [\App\Http\Controllers\Api\AdminController::class, 'store'])->middleware('permission:admins.create');
+        Route::get('/{id}', [\App\Http\Controllers\Api\AdminController::class, 'show'])->middleware('permission:admins.view');
+        Route::put('/{id}', [\App\Http\Controllers\Api\AdminController::class, 'update'])->middleware('permission:admins.edit');
+        Route::delete('/{id}', [\App\Http\Controllers\Api\AdminController::class, 'destroy'])->middleware('permission:admins.delete');
+    });
+
+    // Staff Management
+    Route::prefix('staffs')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\StaffController::class, 'index'])->middleware('permission:staff.view');
+        Route::post('/', [\App\Http\Controllers\Api\StaffController::class, 'store'])->middleware('permission:staff.create');
+        Route::get('/{staff_id}', [\App\Http\Controllers\Api\StaffController::class, 'show'])->middleware('permission:staff.view');
+        Route::put('/{staff_id}', [\App\Http\Controllers\Api\StaffController::class, 'update'])->middleware('permission:staff.edit');
+        Route::delete('/{staff_id}', [\App\Http\Controllers\Api\StaffController::class, 'destroy'])->middleware('permission:staff.delete');
+    });
+
+    // Customer Management
+    Route::prefix('customers')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\CustomerController::class, 'index'])->middleware('permission:customers.view');
+        Route::post('/', [\App\Http\Controllers\Api\CustomerController::class, 'store'])->middleware('permission:customers.create');
+        Route::get('/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'show'])->middleware('permission:customers.view');
+        Route::put('/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'update'])->middleware('permission:customers.edit');
+        Route::delete('/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'destroy'])->middleware('permission:customers.delete');
+        
+        // Additional customer endpoints
+        Route::post('/import', [\App\Http\Controllers\Api\CustomerController::class, 'import'])->middleware('permission:customers.import');
+        Route::get('/export', [\App\Http\Controllers\Api\CustomerController::class, 'export'])->middleware('permission:customers.export');
+    });
+});
+// Protected routes (authentication required)
+Route::middleware(['auth:sanctum'])->group(function () {
     
-
-    // Admin-only Branch Routes (Only 'admin' role, NOT super_admin)
-    Route::middleware('is_admin')->group(function () {
-        Route::post('/branches', [BranchController::class, 'store']);
-        // Branch Routes (Authenticated users)
-    Route::get('/branches', [BranchController::class, 'index']);         
-    Route::get('/branches/{id}', [BranchController::class, 'show']);     
-    Route::put('/branches/{id}', [BranchController::class, 'update']);     
-    Route::delete('/branches/{id}', [BranchController::class, 'destroy']);
-
-    // Loan Product Routes (Field Officer can create and manage)
-        Route::post('/loan-products', [LoanProductController::class, 'store']);
-        Route::get('/loan-products', [LoanProductController::class, 'index']);
-        Route::get('/loan-products/filter', [LoanProductController::class, 'filter']);
-        Route::get('/loan-products/{id}', [LoanProductController::class, 'show']);
-        Route::put('/loan-products/{id}', [LoanProductController::class, 'update']);
-        Route::delete('/loan-products/{id}', [LoanProductController::class, 'destroy']);
-
-        // Investment Product Routes (Field Officer can create and manage)
-        Route::post('/investment-products', [InvestmentProductController::class, 'store']);
-        Route::get('/investment-products', [InvestmentProductController::class, 'index']);
-        Route::get('/investment-products/filter', [InvestmentProductController::class, 'filter']);
-        Route::get('/investment-products/{id}', [InvestmentProductController::class, 'show']);
-        Route::put('/investment-products/{id}', [InvestmentProductController::class, 'update']);
-        Route::delete('/investment-products/{id}', [InvestmentProductController::class, 'destroy']);
+    // Auth routes
+    Route::prefix('auth')->group(function () {
+        Route::get('me', [AuthController::class, 'me']);
+        Route::get('permissions', [AuthController::class, 'permissions']);
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::post('refresh', [AuthController::class, 'refresh']);
     });
 
-    // Center Routes - Read operations (Authenticated users)
+    // User Management (require specific permissions)
+    // routes/api.php - Update user routes section
+Route::prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index'])->middleware('permission:users.view');
+    Route::post('/', [UserController::class, 'store'])->middleware('permission:users.create');
+    Route::get('/{user}', [UserController::class, 'show'])->middleware('permission:users.view');
+    Route::put('/{user}', [UserController::class, 'update'])->middleware('permission:users.edit');
+    Route::delete('/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete');
     
+    // Additional user endpoints
+    Route::post('/{user}/change-password', [UserController::class, 'changePassword'])->middleware('permission:users.edit');
+    Route::put('/{user}/status', [UserController::class, 'updateStatus'])->middleware('permission:users.edit');
+    Route::post('/{user}/unlock', [UserController::class, 'unlock'])->middleware('permission:users.edit');
+    Route::get('/{user}/statistics', [UserController::class, 'getStatistics'])->middleware('permission:users.view');
+    Route::get('/{user}/activity-log', [UserController::class, 'getActivityLog'])->middleware('permission:users.view');
+    
+    // Bulk operations
+    Route::post('/bulk/status', [UserController::class, 'bulkUpdateStatus'])->middleware('permission:users.edit');
+});
 
-    // Field Officer Only Routes - Center Creation
-    Route::middleware('is_field_officer')->group(function () {
-       
-        Route::post('/centers', [CenterController::class, 'store']);
-        Route::get('/centers', [CenterController::class, 'index']); 
-        Route::get('/centers/pending', [CenterController::class, 'pending']);       
-        Route::get('/centers/{id}', [CenterController::class, 'show']);     
-        Route::put('/centers/{id}', [CenterController::class, 'update']);     
-        Route::delete('/centers/{id}', [CenterController::class, 'destroy']);
-
-        // Group Routes
-        Route::post('/groups', [GroupController::class, 'store']);
-        Route::get('/groups', [GroupController::class, 'index']);
-        Route::get('/groups/{id}', [GroupController::class, 'show']);
-        Route::put('/groups/{id}', [GroupController::class, 'update']);
-        Route::delete('/groups/{id}', [GroupController::class, 'destroy']); 
-
-        
-    }); 
-
-    // Manager Routes - Center Approval & Loan Approval
-    Route::middleware('is_manager')->group(function () {
-        Route::get('/centers/pending', [CenterController::class, 'pending']);
-        Route::patch('/centers/{id}/approve', [CenterController::class, 'approve']);
-    });
-        
-    // Route::middleware(['auth', 'role:field_officer,manager'])->group(function () {
-    //     Route::get('/centers/pending', [CenterController::class, 'pending']);
-    // });
-
-
-    // Super Admin Routes
-    Route::middleware('is_super_admin')->group(function () {
-        Route::post('/admins', [\App\Http\Controllers\Api\AdminController::class, 'store']);
-        Route::get('/admins', [\App\Http\Controllers\Api\AdminController::class, 'index']);
-        Route::get('/admins/{id}', [\App\Http\Controllers\Api\AdminController::class, 'show']);
-        Route::put('/admins/{id}', [\App\Http\Controllers\Api\AdminController::class, 'update']);
-        Route::delete('/admins/{id}', [\App\Http\Controllers\Api\AdminController::class, 'destroy']);
+    // Permission Management
+    Route::prefix('permissions')->group(function () {
+        Route::get('/', [PermissionController::class, 'index'])->middleware('permission:permissions.view');
+        Route::post('/', [PermissionController::class, 'store'])->middleware('permission:permissions.create');
+        Route::get('/{permission}', [PermissionController::class, 'show'])->middleware('permission:permissions.view');
+        Route::put('/{permission}', [PermissionController::class, 'update'])->middleware('permission:permissions.edit');
+        Route::delete('/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:permissions.delete');
     });
 
-    // Admin Routes (only admin role can access)
-    // Admin Routes - Second Approval
-    Route::middleware('is_admin')->group(function () {
-        Route::post('/staffs', [\App\Http\Controllers\Api\StaffController::class, 'store']);
-        Route::get('/staffs', [\App\Http\Controllers\Api\StaffController::class, 'index']);
-        Route::get('/staffs/{staff_id}', [\App\Http\Controllers\Api\StaffController::class, 'show']);
-        Route::put('/staffs/{staff_id}', [\App\Http\Controllers\Api\StaffController::class, 'update']);
-        Route::delete('/staffs/{staff_id}', [\App\Http\Controllers\Api\StaffController::class, 'destroy']);
-    });
-
-    // Field Officer Routes (only field_officer role can access)
-    Route::middleware('is_field_officer')->group(function () {
-        Route::post('/customers/import', [\App\Http\Controllers\Api\CustomerController::class, 'import']);
-        Route::get('/customers/export', [\App\Http\Controllers\Api\CustomerController::class, 'export']);
-        
-        Route::post('/customers', [\App\Http\Controllers\Api\CustomerController::class, 'store']);
-        Route::get('/customers', [\App\Http\Controllers\Api\CustomerController::class, 'index']);
-        Route::get('/customers/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'show']);
-        Route::put('/customers/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'update']);
-        Route::delete('/customers/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'destroy']);
+    // Role Management
+    Route::prefix('roles')->group(function () {
+        Route::get('/', [RoleController::class, 'index'])->middleware('permission:roles.view');
+        Route::post('/', [RoleController::class, 'store'])->middleware('permission:roles.create');
+        Route::get('/{role}', [RoleController::class, 'show'])->middleware('permission:roles.view');
+        Route::put('/{role}', [RoleController::class, 'update'])->middleware('permission:roles.edit');
+        Route::delete('/{role}', [RoleController::class, 'destroy'])->middleware('permission:roles.delete');
     });
 });
