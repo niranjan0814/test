@@ -7,6 +7,7 @@ use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Services\RoleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
 
 class RoleController extends BaseController
 {
@@ -17,7 +18,8 @@ class RoleController extends BaseController
         $this->roleService = $roleService;
         
         // Middleware
-        $this->middleware(['auth:sanctum', 'permission:roles.view']);
+        $this->middleware(['auth:sanctum', 'permission:roles.view'])
+            ->except(['all']);
         $this->middleware(['permission:roles.create'], ['only' => ['store']]);
         $this->middleware(['permission:roles.edit'], ['only' => ['update', 'syncPermissions']]);
         $this->middleware(['permission:roles.delete'], ['only' => ['destroy']]);
@@ -205,4 +207,15 @@ class RoleController extends BaseController
             return $this->error($e->getMessage(), 500);
         }
     }
+
+public function all()
+{
+    return response()->json([
+        'success' => true,
+        'data' => Role::select('id', 'name', 'display_name', 'level', 'description')
+            ->orderBy('hierarchy')
+            ->get()
+    ]);
+}
+
 }

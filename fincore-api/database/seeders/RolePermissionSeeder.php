@@ -186,7 +186,40 @@ class RolePermissionSeeder extends Seeder
 
             // Assign permissions to roles
             $superAdmin = Role::where('name', 'super_admin')->first();
-            $superAdmin->syncPermissions(Permission::all());
+            $superAdmin=Permission::where('name',[
+                'dashboard.view',
+                'staff.view',
+                'staff.create',
+                'staff.edit',
+                'staff.delete',
+                
+                'branches.view',
+                'branches.create',
+                'branches.edit',
+                'branches.delete',
+
+                'loan_products.view',
+                'loan_products.create',
+                'loan_products.edit',
+                'loan_products.delete',
+
+                'investment_products.view',
+                'investment_products.create',
+                'investment_products.edit',
+                'investment_products.delete',
+
+                'admins.view',
+                'admins.create',
+                'admins.edit',
+                'admins.delete',
+                'roles.view',
+                'permissions.view',
+                'centers.view',
+                'centers.create',
+                'centers.edit',
+                'centers.delete',
+            ])->get();
+            $superAdmin->syncPermissions($superAdmin);
 
             $admin = Role::where('name', 'admin')->first();
             $adminPermissions = Permission::where('name', [
@@ -212,6 +245,12 @@ class RolePermissionSeeder extends Seeder
                 'investment_products.edit',
                 'investment_products.delete',
 
+                'admins.view',
+                'admins.create',
+                'admins.edit',
+                'admins.delete',
+                'roles.view',
+                'permissions.view',
                 'centers.delete',
             ])->get();
             $admin->syncPermissions($adminPermissions);

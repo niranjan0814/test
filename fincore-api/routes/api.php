@@ -30,6 +30,8 @@ Route::prefix('auth')->group(function () {
         Route::post('check-any-permission', [AuthController::class, 'checkAnyPermission']);
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
+
+
     });
 });
 
@@ -162,6 +164,7 @@ Route::prefix('users')->group(function () {
 
     // Role Management
     Route::prefix('roles')->group(function () {
+        Route::get('/all', [RoleController::class, 'all']);
         Route::get('/', [RoleController::class, 'index'])->middleware('permission:roles.view');
         Route::post('/', [RoleController::class, 'store'])->middleware('permission:roles.create');
         Route::get('/{role}', [RoleController::class, 'show'])->middleware('permission:roles.view');
