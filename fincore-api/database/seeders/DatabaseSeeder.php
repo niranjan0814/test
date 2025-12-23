@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         // Run ONLY Super Admin seeder
         //$this->call(SuperAdminStaffSeeder::class);
-        $this->call(SuperAdminSeeder::class);
+        //$this->call(SuperAdminSeeder::class);
         // User::factory(10)->create();
 
         // User::factory()->create([

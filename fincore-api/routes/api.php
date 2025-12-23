@@ -1,4 +1,4 @@
-// routes/api.php - Add these routes
+
 <?php
 
 use Illuminate\Support\Facades\Route;

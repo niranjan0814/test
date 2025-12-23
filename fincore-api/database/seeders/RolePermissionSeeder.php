@@ -50,6 +50,18 @@ class RolePermissionSeeder extends Seeder
                 ['name' => 'users.roles.manage', 'display_name' => 'Manage User Roles', 'module' => 'users', 'permission_group_id' => 1],
                 ['name' => 'users.permissions.manage', 'display_name' => 'Manage User Permissions', 'module' => 'users', 'permission_group_id' => 1],
 
+                // Admin Management
+                ['name' => 'admins.view', 'display_name' => 'View Admins', 'module' => 'admins', 'permission_group_id' => 1],
+                ['name' => 'admins.create', 'display_name' => 'Create Admins', 'module' => 'admins', 'permission_group_id' => 1],
+                ['name' => 'admins.edit', 'display_name' => 'Edit Admins', 'module' => 'admins', 'permission_group_id' => 1],
+                ['name' => 'admins.delete', 'display_name' => 'Delete Admins', 'module' => 'admins', 'permission_group_id' => 1],
+
+                // Staff Management
+                ['name' => 'staff.view', 'display_name' => 'View Staff', 'module' => 'staff', 'permission_group_id' => 1],
+                ['name' => 'staff.create', 'display_name' => 'Create Staff', 'module' => 'staff', 'permission_group_id' => 1],
+                ['name' => 'staff.edit', 'display_name' => 'Edit Staff', 'module' => 'staff', 'permission_group_id' => 1],
+                ['name' => 'staff.delete', 'display_name' => 'Delete Staff', 'module' => 'staff', 'permission_group_id' => 1],
+
                 // Role Management
                 ['name' => 'roles.view', 'display_name' => 'View Roles', 'module' => 'roles', 'permission_group_id' => 2],
                 ['name' => 'roles.create', 'display_name' => 'Create Roles', 'module' => 'roles', 'permission_group_id' => 2],
@@ -126,10 +138,13 @@ class RolePermissionSeeder extends Seeder
           
             // Create super admin user
             $superAdminUser = User::create([
-                'user_name' => 'Super Admin',
-                'email' => 'superadmin@example.com',
-                'password' => Hash::make('password123'),
-                'is_active' => true,
+                'user_name' => 'SA0001',
+                'email' => 'admin@fincore.com',
+                'password'          => 'S@1234admin',
+                'digital_signature' => Hash::make('SA0001'), // Renamed field
+                'is_active'         => true,
+                'failed_login_attempts' => 0,
+
             ]);
 
             $superAdminUser->assignRole('super_admin');

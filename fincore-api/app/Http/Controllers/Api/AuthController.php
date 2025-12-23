@@ -73,22 +73,48 @@ class AuthController extends BaseController
             }
 
             // Successful login
-            $user->update([
-                'failed_login_attempts' => 0,
-                'is_locked' => false,
-            ]);
+        $user->update([
+            'failed_login_attempts' => 0,
+            'is_locked' => false,
+        ]);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+        // Create token
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-            return response()->json([
-                'statusCode' => 2000,
-                'message' => 'Login successful',
-                'data' => [
-                    'access_token' => $token,
-                    'token_type' => 'Bearer',
-                    'user' => $user,
-                ]
-            ], 200);
+        // Load roles and permissions
+        $user->load(['roles.permissions', 'permissions']);
+
+        // Get role and permission data
+        $roles = $user->roles->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'name' => $role->name,
+                'display_name' => $role->display_name,
+                'description' => $role->description,
+                'level' => $role->level,
+            ];
+        });
+
+        $permissions = $user->getAllPermissions()->map(function ($permission) {
+            return [
+                'id' => $permission->id,
+                'name' => $permission->name,
+                'display_name' => $permission->display_name,
+                'module' => $permission->module,
+            ];
+        });
+
+        return response()->json([
+            'statusCode' => 2000,
+            'message' => 'Login successful',
+            'data' => [
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => $user,
+                'roles' => $roles,
+                'permissions' => $permissions,
+            ]
+        ], 200);
 
         } catch (\Exception $e) {
             Log::error('Login failed', [
@@ -112,15 +138,36 @@ class AuthController extends BaseController
             return $this->errorResponse(4010, 'Session expired. Please login again', 401);
         }
 
+        // Load roles and permissions
         $user->load(['roles.permissions', 'permissions']);
+
+        // Get role and permission data
+        $roles = $user->roles->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'name' => $role->name,
+                'display_name' => $role->display_name,
+                'description' => $role->description,
+                'level' => $role->level,
+            ];
+        });
+
+        $permissions = $user->getAllPermissions()->map(function ($permission) {
+            return [
+                'id' => $permission->id,
+                'name' => $permission->name,
+                'display_name' => $permission->display_name,
+                'module' => $permission->module,
+            ];
+        });
 
         return response()->json([
             'statusCode' => 2000,
             'message' => 'Profile fetched successfully',
             'data' => [
                 'user' => $user,
-                'roles' => $user->getRoleNames(),
-                'permissions' => $user->getAllPermissionNames(),
+                'roles' => $roles,
+                'permissions' => $permissions,
             ]
         ], 200);
     }
