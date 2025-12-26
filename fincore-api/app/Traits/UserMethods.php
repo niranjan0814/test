@@ -77,10 +77,6 @@ trait UserMethods
      */
     public function canManageUser($otherUser): bool
     {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
-        
         if (!($otherUser instanceof \App\Models\User)) {
             return false;
         }

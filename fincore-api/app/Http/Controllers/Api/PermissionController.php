@@ -17,7 +17,8 @@ class PermissionController extends BaseController
         $this->permissionService = $permissionService;
         
         // Middleware
-        $this->middleware(['auth:sanctum', 'permission:permissions.view']);
+        $this->middleware(['auth:sanctum']);
+        $this->middleware(['permission:permissions.view'])->except(['groups', 'modules', 'byModule']);
         $this->middleware(['permission:permissions.create'], ['only' => ['store']]);
         $this->middleware(['permission:permissions.edit'], ['only' => ['update']]);
         $this->middleware(['permission:permissions.delete'], ['only' => ['destroy']]);

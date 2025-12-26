@@ -23,7 +23,7 @@ class CustomerController extends Controller
             'pcsu_csu_code' => 'nullable|string',
             
             // Customer Personal Details (required)
-            'code_type' => 'required|string',
+            'code_type' => 'required|string|in:' . Customer::CODE_TYPE, // Must be 'NIC'
             'customer_code' => ['required', 'string', 'regex:/^([0-9]{9}[x|X|v|V]|[0-9]{12})$/', 'unique:customers,customer_code'], // This is the NIC
             'gender' => 'required|in:Male,Female,Other',
             'title' => 'required|string',
@@ -33,7 +33,7 @@ class CustomerController extends Controller
             'last_name' => 'required|string',
             'date_of_birth' => 'required|date|before:today|after:1900-01-01',
             'civil_status' => 'required|in:Single,Married,Divorced,Widowed',
-            'religion' => 'required|string',
+            'religion' => 'required|string|in:' . implode(',', Customer::RELIGIONS),
             'mobile_no_1' => ['required', 'string', 'regex:/^\d{10}$/'],
             'mobile_no_2' => ['nullable', 'string', 'regex:/^\d{10}$/'],
             'ccl_mobile_no' => ['nullable', 'string', 'regex:/^\d{10}$/'],
@@ -57,7 +57,7 @@ class CustomerController extends Controller
             'preferred_address' => 'nullable|boolean',
             
             // Business Details (all optional)
-            'ownership_type' => 'nullable|string',
+            'ownership_type' => 'nullable|string|in:' . implode(',', Customer::OWNERSHIP_TYPES),
             'register_number' => 'nullable|string',
             'business_name' => 'nullable|string',
             'business_email' => 'nullable|email:filter',
@@ -105,6 +105,26 @@ class CustomerController extends Controller
                 'status' => 'error',
                 'message' => 'Only female customers are eligible for loans in this program'
             ], 403);
+        }
+
+        // Calculate age from date of birth
+        $dateOfBirth = new \DateTime($validated['date_of_birth']);
+        $today = new \DateTime('today');
+        $age = $dateOfBirth->diff($today)->y;
+
+        // Validate age range for loan eligibility
+        if ($age < Customer::MIN_AGE) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Customer must be at least " . Customer::MIN_AGE . " years old to be eligible for loans. Current age: {$age} years"
+            ], 422);
+        }
+
+        if ($age > Customer::MAX_AGE) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Customer must be " . Customer::MAX_AGE . " years old or younger to be eligible for loans. Current age: {$age} years"
+            ], 422);
         }
 
         try {
@@ -201,7 +221,7 @@ class CustomerController extends Controller
             'product_type' => 'nullable|string',
             'base_product' => 'nullable|string',
             'pcsu_csu_code' => 'nullable|string',
-            'code_type' => 'nullable|string',
+            'code_type' => 'nullable|string|in:' . Customer::CODE_TYPE, // Must be 'NIC' if provided
             'customer_code' => ['nullable', 'string', 'regex:/^([0-9]{9}[x|X|v|V]|[0-9]{12})$/', 'unique:customers,customer_code,' . $id],
             'gender' => 'nullable|in:Male,Female,Other',
             'title' => 'nullable|string',
@@ -211,7 +231,7 @@ class CustomerController extends Controller
             'last_name' => 'nullable|string',
             'date_of_birth' => 'nullable|date|before:today|after:1900-01-01',
             'civil_status' => 'nullable|in:Single,Married,Divorced,Widowed',
-            'religion' => 'nullable|string',
+            'religion' => 'nullable|string|in:' . implode(',', Customer::RELIGIONS),
             'mobile_no_1' => ['nullable', 'string', 'regex:/^\d{10}$/'],
             'mobile_no_2' => ['nullable', 'string', 'regex:/^\d{10}$/'],
             'ccl_mobile_no' => ['nullable', 'string', 'regex:/^\d{10}$/'],
@@ -231,7 +251,8 @@ class CustomerController extends Controller
             'gs_division' => 'nullable|string|max:255',
             'telephone' => ['nullable', 'string', 'regex:/^\d{10}$/'],
             'preferred_address' => 'nullable|boolean',
-            'ownership_type' => 'nullable|string',
+            'ownership_type' => 'nullable|string|in:' . implode(',', Customer::OWNERSHIP_TYPES),
+            'status' => 'nullable|string|in:' . implode(',', Customer::STATUSES),
             'register_number' => 'nullable|string',
             'business_name' => 'nullable|string',
             'business_email' => 'nullable|email:filter',
@@ -349,6 +370,31 @@ class CustomerController extends Controller
                 'message' => 'Failed to export customers: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get customer constants for frontend forms
+     */
+    public function getConstants()
+    {
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'country' => Customer::COUNTRY,
+                'provinces' => Customer::PROVINCES,
+                'province_districts_map' => Customer::PROVINCE_DISTRICTS,
+                'districts' => Customer::DISTRICTS,
+                'cities' => Customer::CITIES,
+                'code_types' => [Customer::CODE_TYPE],
+                'religions' => Customer::RELIGIONS,
+                'statuses' => Customer::STATUSES,
+                'ownership_types' => Customer::OWNERSHIP_TYPES,
+                'age_limits' => [
+                    'min' => Customer::MIN_AGE,
+                    'max' => Customer::MAX_AGE
+                ]
+            ]
+        ], 200);
     }
 
     /**

@@ -8,7 +8,7 @@ class UpdateRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('roles.edit');
     }
 
     public function rules(): array
@@ -19,8 +19,8 @@ class UpdateRoleRequest extends FormRequest
             'name' => 'sometimes|string|max:255|unique:roles,name,' . $roleId,
             'display_name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'level' => 'sometimes|in:super_admin,admin,manager,staff',
-            'hierarchy' => 'sometimes|integer|min:1|max:1000',
+            'level' => 'sometimes|string|max:50',
+            'hierarchy' => 'sometimes|integer|min:2|max:10000',
             'guard_name' => 'nullable|string|max:50',
             'is_default' => 'boolean',
             'is_editable' => 'boolean',

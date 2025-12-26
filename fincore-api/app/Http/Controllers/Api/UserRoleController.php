@@ -71,14 +71,12 @@ class UserRoleController extends BaseController
             
             // Check hierarchy for each role
             $currentUser = auth()->user();
-            if (!$currentUser->isSuperAdmin()) {
-                $currentRole = $currentUser->roles()->first();
-                if ($currentRole) {
-                    $roles = \App\Models\Role::whereIn('id', $request->roles)->get();
-                    foreach ($roles as $role) {
-                        if ($role->hierarchy <= $currentRole->hierarchy) {
-                            return $this->error('Cannot assign role with equal or higher hierarchy: ' . $role->name);
-                        }
+            $currentRole = $currentUser->roles()->first();
+            if ($currentRole) {
+                $roles = \App\Models\Role::whereIn('id', $request->roles)->get();
+                foreach ($roles as $role) {
+                    if ($role->hierarchy <= $currentRole->hierarchy) {
+                        return $this->error('Cannot assign role with equal or higher hierarchy: ' . $role->name);
                     }
                 }
             }

@@ -344,10 +344,6 @@ class User extends Authenticatable
      */
     public function canDo($action, $module = null): bool
     {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
-        
         $permissionName = $module ? "{$module}.{$action}" : $action;
         return $this->hasPermissionTo($permissionName);
     }
@@ -366,10 +362,6 @@ class User extends Authenticatable
      */
     public function canManageUser(User $otherUser): bool
     {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
-        
         return $this->getRoleHierarchy() < $otherUser->getRoleHierarchy();
     }
 }

@@ -210,11 +210,16 @@ class RoleController extends BaseController
 
 public function all()
 {
+    $user = auth()->user();
+    $query = Role::select('id', 'name', 'display_name', 'level', 'description');
+    
+    if ($user) {
+        $query->where('hierarchy', '>', $user->getRoleHierarchy());
+    }
+
     return response()->json([
         'success' => true,
-        'data' => Role::select('id', 'name', 'display_name', 'level', 'description')
-            ->orderBy('hierarchy')
-            ->get()
+        'data' => $query->orderBy('hierarchy')->get()
     ]);
 }
 

@@ -10,53 +10,75 @@ class Customer extends Model
     // Sri Lankan Location Constants
     const COUNTRY = 'Sri Lanka';
     
+    // Code Type Enum - Only NIC is supported
+    const CODE_TYPE = 'NIC';
+    
+    // Religion Enum - Common religions in Sri Lanka
+    const RELIGIONS = [
+        'Buddhism',
+        'Hinduism',
+        'Islam',
+        'Christianity',
+        'Roman Catholic',
+        'Other',
+    ];
+    
+    // Age Restrictions for Loan Eligibility
+    const MIN_AGE = 18; // Minimum age to be eligible for loans
+    const MAX_AGE = 65; // Maximum age to be eligible for loans
+
+    // Customer Status Enum
+    const STATUSES = ['active', 'blocked', 'left'];
+    const DEFAULT_STATUS = 'active';
+    
+    // Ownership Types Enum
+    const OWNERSHIP_TYPES = [
+        'Sole Proprietorship',
+        'Partnership',
+        'Private Limited',
+        'Public Limited',
+        'NGO',
+        'Other'
+    ];
+
+    const PROVINCE_DISTRICTS = [
+        'Western' => ['Colombo', 'Gampaha', 'Kalutara'],
+        'Central' => ['Kandy', 'Matale', 'Nuwara Eliya'],
+        'Southern' => ['Galle', 'Matara', 'Hambantota'],
+        'Northern' => ['Jaffna', 'Kilinochchi', 'Mannar', 'Vavuniya', 'Mullaitivu'],
+        'Eastern' => ['Batticaloa', 'Ampara', 'Trincomalee'],
+        'North Western' => ['Kurunegala', 'Puttalam'],
+        'North Central' => ['Anuradhapura', 'Polonnaruwa'],
+        'Uva' => ['Badulla', 'Monaragala'],
+        'Sabaragamuwa' => ['Ratnapura', 'Kegalle']
+    ];
+
+    // Helper to get all provinces
+    public static function getProvinces() {
+        return array_keys(self::PROVINCE_DISTRICTS);
+    }
+
+    // Helper to get all districts
+    public static function getDistricts() {
+        return array_merge(...array_values(self::PROVINCE_DISTRICTS));
+    }
+    
+    // Legacy constants for backward compatibility (if needed)
     const PROVINCES = [
-        'Western',
-        'Central',
-        'Southern',
-        'Northern',
-        'Eastern',
-        'North Western',
-        'North Central',
-        'Uva',
-        'Sabaragamuwa',
+        'Western', 'Central', 'Southern', 'Northern', 'Eastern',
+        'North Western', 'North Central', 'Uva', 'Sabaragamuwa'
     ];
     
     const DISTRICTS = [
-        // Western Province
-        'Colombo',
-        'Gampaha',
-        'Kalutara',
-        // Central Province
-        'Kandy',
-        'Matale',
-        'Nuwara Eliya',
-        // Southern Province
-        'Galle',
-        'Matara',
-        'Hambantota',
-        // Northern Province
-        'Jaffna',
-        'Kilinochchi',
-        'Mannar',
-        'Vavuniya',
-        'Mullaitivu',
-        // Eastern Province
-        'Batticaloa',
-        'Ampara',
-        'Trincomalee',
-        // North Western Province
-        'Kurunegala',
-        'Puttalam',
-        // North Central Province
-        'Anuradhapura',
-        'Polonnaruwa',
-        // Uva Province
-        'Badulla',
-        'Monaragala',
-        // Sabaragamuwa Province
-        'Ratnapura',
-        'Kegalle',
+        'Colombo', 'Gampaha', 'Kalutara',
+        'Kandy', 'Matale', 'Nuwara Eliya',
+        'Galle', 'Matara', 'Hambantota',
+        'Jaffna', 'Kilinochchi', 'Mannar', 'Vavuniya', 'Mullaitivu',
+        'Batticaloa', 'Ampara', 'Trincomalee',
+        'Kurunegala', 'Puttalam',
+        'Anuradhapura', 'Polonnaruwa',
+        'Badulla', 'Monaragala',
+        'Ratnapura', 'Kegalle',
     ];
     
     const CITIES = [
@@ -142,6 +164,7 @@ class Customer extends Model
         'market_reputation',
         'sector',
         'sub_sector',
+        'status', // Customer status (active, blocked, left)
     ];
 
     protected $casts = [

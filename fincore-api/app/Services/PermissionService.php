@@ -36,6 +36,12 @@ class PermissionService
             $query->where('is_core', filter_var($filters['is_core'], FILTER_VALIDATE_BOOLEAN));
         }
 
+        // Filter out 'admins' module if user doesn't have explicit permission
+        $user = auth()->user();
+        if ($user && !$user->hasPermissionTo('users.permissions.manage')) {
+            $query->where('module', '!=', 'admins');
+        }
+
         return $query->paginate($perPage);
     }
 
@@ -127,7 +133,14 @@ class PermissionService
      */
     public function getAllModules()
     {
-        return Permission::distinct()->pluck('module')->filter()->values();
+        $query = Permission::query()->distinct();
+        
+        $user = auth()->user();
+        if ($user && !$user->hasPermissionTo('users.permissions.manage')) {
+            $query->where('module', '!=', 'admins');
+        }
+
+        return $query->pluck('module')->filter()->values();
     }
 
     /**

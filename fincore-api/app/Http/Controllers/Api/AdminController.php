@@ -16,6 +16,18 @@ class AdminController extends Controller
      */
     public function store(Request $request)
     {
+        // Check hierarchy: creator must be strictly above the 'admin' role
+        $currentUser = auth()->user();
+        if ($currentUser) {
+            $adminRole = \App\Models\Role::where('name', 'admin')->first();
+            if ($adminRole && $currentUser->getRoleHierarchy() >= $adminRole->hierarchy) {
+                return response()->json([
+                    'statusCode' => 4030,
+                    'message' => 'Unauthorized: You cannot create a role at your level or above.'
+                ], 403);
+            }
+        }
+
         // Manual validation to return custom 4000 code
         $validator = Validator::make($request->all(), [
             'email' => 'required|email:filter',

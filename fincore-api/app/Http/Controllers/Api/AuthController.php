@@ -92,6 +92,7 @@ class AuthController extends BaseController
                 'display_name' => $role->display_name,
                 'description' => $role->description,
                 'level' => $role->level,
+                'hierarchy' => $role->hierarchy,
             ];
         });
 
@@ -149,6 +150,7 @@ class AuthController extends BaseController
                 'display_name' => $role->display_name,
                 'description' => $role->description,
                 'level' => $role->level,
+                'hierarchy' => $role->hierarchy,
             ];
         });
 

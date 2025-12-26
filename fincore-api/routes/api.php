@@ -113,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('customers')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\CustomerController::class, 'index'])->middleware('permission:customers.view');
         Route::post('/', [\App\Http\Controllers\Api\CustomerController::class, 'store'])->middleware('permission:customers.create');
+        Route::get('/constants', [\App\Http\Controllers\Api\CustomerController::class, 'getConstants']); // Public for authenticated users
         Route::get('/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'show'])->middleware('permission:customers.view');
         Route::put('/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'update'])->middleware('permission:customers.edit');
         Route::delete('/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'destroy'])->middleware('permission:customers.delete');
@@ -155,12 +156,15 @@ Route::prefix('users')->group(function () {
 
     // Permission Management
     Route::prefix('permissions')->group(function () {
+        Route::get('/groups', [PermissionController::class, 'groups']);
         Route::get('/', [PermissionController::class, 'index'])->middleware('permission:permissions.view');
         Route::post('/', [PermissionController::class, 'store'])->middleware('permission:permissions.create');
         Route::get('/{permission}', [PermissionController::class, 'show'])->middleware('permission:permissions.view');
         Route::put('/{permission}', [PermissionController::class, 'update'])->middleware('permission:permissions.edit');
         Route::delete('/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:permissions.delete');
     });
+
+    Route::get('/permission-groups', [PermissionController::class, 'groups']);
 
     // Role Management
     Route::prefix('roles')->group(function () {

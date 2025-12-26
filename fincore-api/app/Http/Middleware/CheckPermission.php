@@ -19,11 +19,6 @@ class CheckPermission
             ], 401);
         }
 
-        // Super admin bypass
-        if ($user->isSuperAdmin()) {
-            return $next($request);
-        }
-
         // Check if user has any of the required permissions
         $hasPermission = false;
         foreach ($permissions as $permission) {

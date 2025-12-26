@@ -26,6 +26,12 @@ class RoleService
             $query->where('level', $filters['level']);
         }
 
+        // Filter by hierarchy (only show roles below current user)
+        $user = auth()->user();
+        if ($user) {
+            $query->where('hierarchy', '>', $user->getRoleHierarchy());
+        }
+
         // Sort
         $sortField = $filters['sort_by'] ?? 'hierarchy';
         $sortOrder = $filters['sort_order'] ?? 'asc';
@@ -40,6 +46,8 @@ class RoleService
     public function createRole(array $data)
     {
         return DB::transaction(function () use ($data) {
+            $this->validateHierarchy($data['hierarchy'] ?? 100);
+
             $role = Role::create([
                 'name' => $data['name'],
                 'display_name' => $data['display_name'] ?? ucwords(str_replace('_', ' ', $data['name'])),
@@ -53,6 +61,8 @@ class RoleService
             ]);
 
             if (isset($data['permissions'])) {
+                $this->validatePermissionSubset($data['permissions']);
+                $this->validateAdminPermissions($data['permissions']);
                 $role->syncPermissions($data['permissions']);
             }
 
@@ -65,7 +75,14 @@ class RoleService
      */
     public function getRoleById($id)
     {
-        return Role::with('permissions')->findOrFail($id);
+        $role = Role::with('permissions')->findOrFail($id);
+        $user = auth()->user();
+        
+        if ($user && $role->hierarchy <= $user->getRoleHierarchy()) {
+            throw new \Exception("Unauthorized: Role level is restricted.");
+        }
+        
+        return $role;
     }
 
     /**
@@ -74,12 +91,26 @@ class RoleService
     public function updateRole($id, array $data)
     {
         $role = Role::findOrFail($id);
+        $user = auth()->user();
+
+        if ($user && $role->hierarchy <= $user->getRoleHierarchy()) {
+            throw new \Exception("Unauthorized: Cannot update role with equal or higher hierarchy.");
+        }
 
         if (!$role->is_editable) {
             throw new \Exception("Values for this role cannot be edited.");
         }
 
+        // Block escalation to super_admin level
+        if (isset($data['level']) && $data['level'] === 'super_admin' && $role->level !== 'super_admin') {
+            throw new \Exception("The super_admin level is protected and cannot be assigned.");
+        }
+
         return DB::transaction(function () use ($role, $data) {
+            if (isset($data['hierarchy'])) {
+                $this->validateHierarchy($data['hierarchy']);
+            }
+
             $role->update([
                 'display_name' => $data['display_name'] ?? $role->display_name,
                 'description' => $data['description'] ?? $role->description,
@@ -89,6 +120,8 @@ class RoleService
             ]);
 
             if (isset($data['permissions'])) {
+                $this->validatePermissionSubset($data['permissions']);
+                $this->validateAdminPermissions($data['permissions']);
                 $role->syncPermissions($data['permissions']);
             }
 
@@ -102,9 +135,14 @@ class RoleService
     public function deleteRole($id)
     {
         $role = Role::findOrFail($id);
+        $user = auth()->user();
 
-        if ($role->is_system) {
-            throw new \Exception("System roles cannot be deleted.");
+        if ($user && $role->hierarchy <= $user->getRoleHierarchy()) {
+            throw new \Exception("Unauthorized: Cannot delete role with equal or higher hierarchy.");
+        }
+
+        if ($role->is_system || $role->level === 'super_admin') {
+            throw new \Exception("System and Super Admin roles cannot be deleted.");
         }
 
         if ($role->users()->count() > 0) {
@@ -121,11 +159,71 @@ class RoleService
     {
         $role = Role::findOrFail($id);
         
-        // Validate if editable? usually permissions are editable even for system roles depending on logic
-        // But let's allow it for now
+        if ($role->level === 'super_admin' && !auth()->user()->isSuperAdmin()) {
+            throw new \Exception("Only Super Admins can modify Super Admin permissions.");
+        }
+
+        $this->validatePermissionSubset($permissions);
+        $this->validateAdminPermissions($permissions);
         
         $role->syncPermissions($permissions);
         return $role->load('permissions');
+    }
+
+    /**
+     * Validate hierarchy level against current user's level
+     */
+    protected function validateHierarchy(int $targetHierarchy)
+    {
+        $user = auth()->user();
+        if (!$user) return;
+
+        // If user is Super Admin, they can create anything except level 1
+        if ($user->isSuperAdmin()) {
+            if ($targetHierarchy <= 1) {
+                throw new \Exception("Hierarchy level 1 is strictly reserved for the primary system administrator.");
+            }
+            return;
+        }
+
+        // Other users must create roles strictly BELOW their own level
+        $currentHierarchy = $user->getRoleHierarchy();
+        if ($targetHierarchy <= $currentHierarchy) {
+            throw new \Exception("Authorization Error: You can only manage roles with a hierarchy value strictly greater than yours (currently {$currentHierarchy}). You cannot create or modify roles at your own level or above.");
+        }
+    }
+
+    /**
+     * Ensure the given permissions are a subset of the user's own permissions
+     */
+    protected function validatePermissionSubset(array $permissionIds)
+    {
+        $user = auth()->user();
+        if (!$user || $user->isSuperAdmin()) return;
+
+        $userPermissions = $user->getAllPermissions()->pluck('id')->toArray();
+        $invalidPermissions = array_diff($permissionIds, $userPermissions);
+
+        if (!empty($invalidPermissions)) {
+            $invalidNames = Permission::whereIn('id', $invalidPermissions)->pluck('name')->toArray();
+            throw new \Exception("Authorization Error: You cannot grant permissions that you do not possess yourself. Missing: " . implode(', ', $invalidNames));
+        }
+    }
+
+    /**
+     * Validate if current user can assign admin permissions
+     */
+    protected function validateAdminPermissions(array $permissionIds)
+    {
+        $user = auth()->user();
+        
+        $adminPermissionsCount = Permission::whereIn('id', $permissionIds)
+            ->where('module', 'admins')
+            ->count();
+
+        if ($adminPermissionsCount > 0 && !$user->hasPermissionTo('users.permissions.manage')) {
+            throw new \Exception("You do not have permission to assign or manage 'Admin Management' permissions.");
+        }
     }
 
     /**
@@ -134,6 +232,7 @@ class RoleService
     public function assignPermissionsToRole($id, array $permissions)
     {
         $role = Role::findOrFail($id);
+        $this->validateAdminPermissions($permissions);
         $role->givePermissionTo($permissions);
         return $role->load('permissions');
     }

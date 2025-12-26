@@ -39,7 +39,7 @@ class RolePermissionSeeder extends Seeder
             ];
 
             foreach ($groups as $group) {
-                PermissionGroup::create($group);
+                PermissionGroup::firstOrCreate(['slug' => $group['slug']], $group);
             }
 
             // Create core permissions
@@ -118,7 +118,7 @@ class RolePermissionSeeder extends Seeder
             ];
 
             foreach ($permissions as $permission) {
-                Permission::create(array_merge($permission, [
+                Permission::firstOrCreate(['name' => $permission['name']], array_merge($permission, [
                     'guard_name' => 'web',
                     'is_core' => true,
                 ]));
@@ -181,17 +181,76 @@ class RolePermissionSeeder extends Seeder
             ];
 
             foreach ($roles as $roleData) {
-                Role::create($roleData);
+                Role::firstOrCreate(['name' => $roleData['name']], $roleData);
             }
 
             // Assign permissions to roles
-            $superAdmin = Role::where('name', 'super_admin')->first();
-            $superAdmin=Permission::where('name',[
+            $superAdminRole = Role::where('name', 'super_admin')->first();
+            $superAdminPermissions = Permission::whereIn('name', [
                 'dashboard.view',
                 'staff.view',
                 'staff.create',
                 'staff.edit',
                 'staff.delete',
+                
+                'users.view',
+                // 'users.create',
+                // 'users.edit',
+                // 'users.delete',
+                'users.roles.manage',
+                'users.permissions.manage',
+
+                'branches.view',
+                // 'branches.create',
+                // 'branches.edit',
+                // 'branches.delete',
+
+                'loan_products.view',
+                // 'loan_products.create',
+                // 'loan_products.edit',
+                // 'loan_products.delete',
+
+                'investment_products.view',
+                // 'investment_products.create',
+                // 'investment_products.edit',
+                // 'investment_products.delete',
+
+                'admins.view',
+                'admins.create',
+                'admins.edit',
+                'admins.delete',
+                'roles.view',
+                'roles.create',
+                'roles.edit',
+                'roles.delete',
+                'permissions.create',
+                'permissions.edit',
+                'permissions.delete',
+                'permissions.view',
+                'centers.view',
+                // 'centers.create',
+                // 'centers.edit',
+                // 'centers.delete',
+            ])->get();
+            if ($superAdminRole) {
+                $superAdminRole->syncPermissions($superAdminPermissions);
+            }
+
+            $adminRole = Role::where('name', 'admin')->first();
+            $adminPermissions = Permission::whereIn('name', [
+                'dashboard.view',
+                
+                'staff.view',
+                'staff.create',
+                'staff.edit',
+                'staff.delete',
+
+                'users.view',
+                'users.create',
+                'users.edit',
+                'users.delete',
+                'users.roles.manage',
+                'users.permissions.manage',
                 
                 'branches.view',
                 'branches.create',
@@ -208,87 +267,47 @@ class RolePermissionSeeder extends Seeder
                 'investment_products.edit',
                 'investment_products.delete',
 
-                'admins.view',
-                'admins.create',
-                'admins.edit',
-                'admins.delete',
                 'roles.view',
-                'permissions.view',
-                'centers.view',
-                'centers.create',
-                'centers.edit',
-                'centers.delete',
-            ])->get();
-            $superAdmin->syncPermissions($superAdmin);
-
-            $admin = Role::where('name', 'admin')->first();
-            $adminPermissions = Permission::where('name', [
-                'dashboard.view',
-                
-                'staff.view',
-                'staff.create',
-                'staff.edit',
-                'staff.delete',
-                
-                'branches.view',
-                'branches.create',
-                'branches.edit',
-                'branches.delete',
-
-                'loan_products.view',
-                'loan_products.create',
-                'loan_products.edit',
-                'loan_products.delete',
-
-                'investment_products.view',
-                'investment_products.create',
-                'investment_products.edit',
-                'investment_products.delete',
-
-                'admins.view',
-                'admins.create',
-                'admins.edit',
-                'admins.delete',
-                'roles.view',
+                'roles.create',
+                'roles.edit',
+                'roles.delete',
                 'permissions.view',
                 'centers.delete',
             ])->get();
-            $admin->syncPermissions($adminPermissions);
+            if ($adminRole) {
+                $adminRole->syncPermissions($adminPermissions);
+            }
 
-            $manager = Role::where('name', 'manager')->first();
-            $managerPermissions = Permission::where('name', [
+            $managerRole = Role::where('name', 'manager')->first();
+            $managerPermissions = Permission::whereIn('name', [
                 'dashboard.view',
-                
-
                 'centers.view',
-                
                 'centers.edit',
-                
             ])->get();
-            $manager->syncPermissions($managerPermissions);
+            if ($managerRole) {
+                $managerRole->syncPermissions($managerPermissions);
+            }
 
-            $field_officer = Role::where('name', 'field_officer')->first();
-            $field_officerPermissions = Permission::where('name', [
+            $fieldOfficerRole = Role::where('name', 'field_officer')->first();
+            $fieldOfficerPermissions = Permission::whereIn('name', [
                 'dashboard.view',
-                
                 'centers.view',
                 'centers.create',
                 'centers.edit',
-
                 'groups.view',
                 'groups.create',
                 'groups.edit',
                 'groups.delete',
-
                 'customers.view',
                 'customers.create',
                 'customers.edit',
                 'customers.delete',
-                
             ])->get();
-            $field_officer->syncPermissions($field_officerPermissions);
+            if ($fieldOfficerRole) {
+                $fieldOfficerRole->syncPermissions($fieldOfficerPermissions);
+            }
 
-            $staff = Role::where('name', 'staff')->first();
+            $staffRole = Role::where('name', 'staff')->first();
             $staffPermissions = Permission::whereIn('name', [
                 'dashboard.view',
                 'customers.view',
@@ -298,40 +317,45 @@ class RolePermissionSeeder extends Seeder
                 'customers.import',
                 'customers.export',
             ])->get();
-            $staff->syncPermissions($staffPermissions);
+            if ($staffRole) {
+                $staffRole->syncPermissions($staffPermissions);
+            }
 
           
             // Create super admin user
-            $superAdminUser = User::create([
-                'user_name' => 'SA0001',
-                'email' => 'admin@fincore.com',
-                'password'          => 'S@1234admin',
-                'digital_signature' => Hash::make('SA0001'), // Renamed field
-                'is_active'         => true,
-                'failed_login_attempts' => 0,
-
-            ]);
+            $superAdminUser = User::firstOrCreate(
+                ['email' => 'admin@fincore.com'],
+                [
+                    'user_name' => 'SA0001',
+                    'password'          => 'S@1234admin',
+                    'digital_signature' => Hash::make('SA0001'),
+                    'is_active'         => true,
+                    'failed_login_attempts' => 0,
+                ]
+            );
 
             $superAdminUser->assignRole('super_admin');
 
             // Create staff details with phone
-            StaffDetail::create([
-                'user_id' => $superAdminUser->id,
-                'employee_id' => 'EMP001',
-                'designation' => 'System Administrator',
-                'department' => 'IT',
-                'phone' => '1234567890', // Phone moved here
-                'joining_date' => now(),
-                'employment_type' => 'permanent',
-                'salary' => 100000,
-            ]);
+            StaffDetail::firstOrCreate(
+                ['user_id' => $superAdminUser->id],
+                [
+                    'employee_id' => 'EMP001',
+                    'designation' => 'System Administrator',
+                    'department' => 'IT',
+                    'phone' => '1234567890',
+                    'joining_date' => now(),
+                    'employment_type' => 'permanent',
+                    'salary' => 100000,
+                ]
+            );
 
             DB::commit();
 
             $this->command->info('✅ Role and permission seeder completed successfully!');
             $this->command->info('👤 Super Admin User:');
-            $this->command->info('   Email: superadmin@example.com');
-            $this->command->info('   Password: password123');
+            $this->command->info('   Email: admin@fincore.com');
+            $this->command->info('   Password: S@1234admin');
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -41,6 +41,14 @@ class UserController extends BaseController
                 });
             }
 
+            // Visibility Filtering: only see users with a hierarchy strictly greater (below) than your own
+            $currentUser = auth()->user();
+            if ($currentUser) {
+                $query->whereHas('roles', function ($q) use ($currentUser) {
+                    $q->where('hierarchy', '>', $currentUser->getRoleHierarchy());
+                });
+            }
+
             // Filter by role
             if ($request->has('role')) {
                 $query->whereHas('roles', function ($q) use ($request) {

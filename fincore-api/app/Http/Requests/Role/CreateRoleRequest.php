@@ -8,7 +8,7 @@ class CreateRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('roles.create');
     }
 
     public function rules(): array
@@ -17,8 +17,8 @@ class CreateRoleRequest extends FormRequest
             'name' => 'required|string|max:255|unique:roles,name',
             'display_name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'level' => 'required|in:super_admin,admin,manager,staff',
-            'hierarchy' => 'required|integer|min:1|max:1000',
+            'level' => 'required|string|max:50',
+            'hierarchy' => 'required|integer|min:2|max:10000',
             'guard_name' => 'nullable|string|max:50',
             'is_default' => 'boolean',
             'is_editable' => 'boolean',
