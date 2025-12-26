@@ -117,6 +117,9 @@ export function CustomerDetailsModal({ customer, onClose }: CustomerDetailsModal
                     </Section>
 
                     <Section title="Business & assignment" icon={Briefcase}>
+                        <LabelValue label="Branch" value={customer.branch?.branch_name || customer.branch_name} icon={MapPin} color="blue" />
+                        <LabelValue label="Center" value={customer.center?.center_name || customer.center_name} icon={Building} color="indigo" />
+                        <LabelValue label="Group" value={customer.group?.group_name || customer.group_name} icon={UsersIcon} color="purple" />
                         <LabelValue label="Business Name" value={customer.business_name} icon={Building} color="amber" />
                         <LabelValue label="Monthly Income" value={customer.monthly_income ? `Rs. ${Number(customer.monthly_income).toLocaleString()}` : '-'} icon={DollarSign} color="green" />
                         <LabelValue label="Sector" value={customer.sector} icon={Briefcase} color="emerald" />

@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Customer;
+use App\Models\Branch;
+use App\Models\Center;
+use App\Models\Group;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -17,6 +20,9 @@ class CustomerController extends Controller
     {
         $validator = Validator::make($request->all(), [
             // Product / Location Details (optional)
+            'branch_id' => 'required|exists:branches,id',
+            'center_id' => 'required|exists:centers,id',
+            'grp_id' => 'nullable|exists:groups,id',
             'location' => 'nullable|string',
             'product_type' => 'nullable|string',
             'base_product' => 'nullable|string',
@@ -167,6 +173,7 @@ class CustomerController extends Controller
         }
         // Add more filters as needed
 
+        $query->with(['branch', 'center', 'group']);
         $customers = $query->get();
         
         $message = $isFiltered 
@@ -185,7 +192,7 @@ class CustomerController extends Controller
      */
     public function show($id)
     {
-        $customer = Customer::find($id);
+        $customer = Customer::with(['branch', 'center', 'group'])->find($id);
 
         if (!$customer) {
             return response()->json([
@@ -217,6 +224,9 @@ class CustomerController extends Controller
 
         $validator = Validator::make($request->all(), [
             // All fields are optional in update
+            'branch_id' => 'nullable|exists:branches,id',
+            'center_id' => 'nullable|exists:centers,id',
+            'grp_id' => 'nullable|exists:groups,id',
             'location' => 'nullable|string',
             'product_type' => 'nullable|string',
             'base_product' => 'nullable|string',
@@ -377,9 +387,16 @@ class CustomerController extends Controller
      */
     public function getConstants()
     {
+        $branches = Branch::select('id', 'branch_name')->get();
+        $centers = Center::select('id', 'center_name', 'branch_id')->get();
+        $groups = Group::select('id', 'group_name', 'center_id')->get();
+
         return response()->json([
             'status' => 'success',
             'data' => [
+                'branches' => $branches,
+                'centers' => $centers,
+                'groups' => $groups,
                 'country' => Customer::COUNTRY,
                 'provinces' => Customer::PROVINCES,
                 'province_districts_map' => Customer::PROVINCE_DISTRICTS,

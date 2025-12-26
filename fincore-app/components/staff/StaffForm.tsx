@@ -51,7 +51,7 @@ export function StaffForm({ onClose, onSubmit, roles, initialData }: StaffFormPr
         const newErrors: Record<string, string> = {};
 
         if (!formData.roleId) newErrors.roleId = 'Role is required';
-        if (!formData.name.trim()) newErrors.name = 'Full Name is required';
+        if (!isAdminRole && !formData.name.trim()) newErrors.name = 'Full Name is required';
         if (!formData.email.trim()) {
             newErrors.email = 'Email is required';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -95,11 +95,12 @@ export function StaffForm({ onClose, onSubmit, roles, initialData }: StaffFormPr
 
     useEffect(() => {
         const loadStaffDetails = async () => {
-            if (isEditing && !isAdminRole && initialData?.name) {
+            // Use staffId if available (for staff members)
+            const staffId = initialData?.staffId;
+            if (isEditing && !isAdminRole && staffId) {
                 setFetchingDetails(true);
                 try {
-                    // Assuming initialData.name holds the Staff ID (e.g., ST0002) for staff users
-                    const details = await staffService.getStaffDetails(initialData.name);
+                    const details = await staffService.getStaffDetails(staffId);
                     if (details) {
                         setFormData(prev => ({
                             ...prev,
@@ -108,10 +109,11 @@ export function StaffForm({ onClose, onSubmit, roles, initialData }: StaffFormPr
                             nic: details.nic || '',
                             address: details.address || '',
                             contactKey: details.contact_no || '',
-                            age: details.age || '',
+                            age: details.age?.toString() || '',
                             gender: details.gender || 'Male',
-                            // Normalize branch name if possible, or keep existing
-                            branch: prev.branch
+                            // Preserve branch if already set, or use from details
+                            branch: prev.branch || details.branch_id?.toString() || '',
+                            isActive: details.account_status === 'active'
                         }));
                     }
                 } catch (err) {
@@ -148,7 +150,7 @@ export function StaffForm({ onClose, onSubmit, roles, initialData }: StaffFormPr
                 role: roleName,
                 roleId: formData.roleId,
                 is_active: formData.isActive,
-                staffId: isEditing ? initialData?.name : undefined
+                staffId: isEditing ? (initialData?.staffId || initialData?.id) : undefined
             };
 
             // Password handling
@@ -172,10 +174,15 @@ export function StaffForm({ onClose, onSubmit, roles, initialData }: StaffFormPr
                     gender: formData.gender,
                     age: parseInt(formData.age),
                     role_name: roleName,
-                    // Default/Hardcoded values for now to satisfy backend strictness
                     account_status: formData.isActive ? 'active' : 'inactive',
-                    work_info: JSON.stringify({ designation: roleName, joined_date: new Date().toISOString().split('T')[0] }),
+                    // Pass work_info as an object, the service/backend will handle it
+                    work_info: {
+                        designation: roleName,
+                        joined_date: new Date().toISOString().split('T')[0]
+                    },
                     profile_image: 'default_avatar.png',
+                    // Map branch string to ID if it's numeric, otherwise omit to avoid validation failure
+                    branch_id: !isNaN(parseInt(formData.branch)) ? parseInt(formData.branch) : undefined,
                 };
             }
 
@@ -232,19 +239,21 @@ export function StaffForm({ onClose, onSubmit, roles, initialData }: StaffFormPr
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="col-span-1 md:col-span-2">
-                            <label className="block font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm">Full Name *</label>
-                            <input
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                type="text"
-                                className={`w-full px-3 py-2 border ${fieldErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700`}
-                                placeholder="Enter full name"
-                                disabled={isEditing && isAdminRole}
-                            />
-                            {fieldErrors.name && <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>}
-                        </div>
+                        {!isAdminRole && (
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm">Full Name *</label>
+                                <input
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    type="text"
+                                    className={`w-full px-3 py-2 border ${fieldErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-700`}
+                                    placeholder="Enter full name"
+                                    disabled={isEditing && isAdminRole}
+                                />
+                                {fieldErrors.name && <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>}
+                            </div>
+                        )}
 
                         {!isAdminRole && (
                             <div>
@@ -261,7 +270,7 @@ export function StaffForm({ onClose, onSubmit, roles, initialData }: StaffFormPr
                             </div>
                         )}
 
-                        <div>
+                        <div className={isAdminRole ? "col-span-1 md:col-span-2" : ""}>
                             <label className="block font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm">Email *</label>
                             <input
                                 name="email"

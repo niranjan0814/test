@@ -90,6 +90,11 @@ class StaffController extends Controller
                 'age' => $request->age,
                 'profile_image' => $request->profile_image,
                 'gender' => $request->gender,
+                'basic_salary' => $request->basic_salary,
+                'monthly_target_amount' => $request->monthly_target_amount,
+                'monthly_target_count' => $request->monthly_target_count,
+                'branch_id' => $request->branch_id,
+                'center_id' => $request->center_id,
             ]);
 
             // Create corresponding user record
@@ -241,6 +246,9 @@ class StaffController extends Controller
                     // Sync role using Spatie
                     $user->syncRoles([$validated['role_name']]);
                 }
+                if (isset($validated['account_status'])) {
+                    $user->is_active = ($validated['account_status'] === 'active');
+                }
                 $user->save();
 
                 // Load roles and permissions for response
@@ -252,7 +260,7 @@ class StaffController extends Controller
             return response()->json([
                 'statusCode' => 2000,
                 'message' => 'Staff updated successfully',
-                'data' => $staff
+                'data' => $staff->fresh()
             ], 200);
 
         } catch (\Exception $e) {

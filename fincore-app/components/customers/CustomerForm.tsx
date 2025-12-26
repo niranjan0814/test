@@ -20,7 +20,7 @@ const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
     </div>
 );
 
-const FormInput = ({ label, name, type = 'text', placeholder, required, error, icon: Icon, colSpan = 1, value, onChange }: any) => (
+const FormInput = ({ label, name, type = 'text', placeholder, required, error, icon: Icon, colSpan = 1, value, onChange, readOnly }: any) => (
     <div className={`space-y-1.5 ${colSpan === 2 ? 'md:col-span-2' : colSpan === 3 ? 'md:col-span-3' : ''}`}>
         <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-tight flex items-center gap-1 ml-1">
             {label} {required && <span className="text-red-500">*</span>}
@@ -36,8 +36,9 @@ const FormInput = ({ label, name, type = 'text', placeholder, required, error, i
                 name={name}
                 value={value || ''}
                 onChange={onChange}
+                readOnly={readOnly}
                 placeholder={placeholder}
-                className={`w-full ${Icon ? 'pl-9' : 'pl-4'} pr-4 py-2.5 bg-gray-50 dark:bg-gray-900/40 border ${error ? 'border-red-500 focus:ring-red-500/10' : 'border-gray-200 dark:border-gray-700/50 focus:ring-blue-500/10'} rounded-xl focus:outline-none focus:ring-4 focus:border-blue-500 transition-all text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600`}
+                className={`w-full ${Icon ? 'pl-9' : 'pl-4'} pr-4 py-2.5 bg-gray-50 dark:bg-gray-900/40 border ${error ? 'border-red-500 focus:ring-red-500/10' : 'border-gray-200 dark:border-gray-700/50 focus:ring-blue-500/10'} rounded-xl focus:outline-none focus:ring-4 focus:border-blue-500 transition-all text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600 ${readOnly ? 'cursor-not-allowed opacity-70' : ''}`}
             />
         </div>
         {error && <p className="text-[10px] text-red-500 font-bold ml-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
@@ -78,9 +79,13 @@ export function CustomerForm({ onClose, onSubmit, initialData }: CustomerFormPro
     const [loading, setLoading] = useState(false);
     const [constants, setConstants] = useState<any>(null);
     const [filteredDistricts, setFilteredDistricts] = useState<string[]>([]);
+    const [filteredCenters, setFilteredCenters] = useState<any[]>([]);
 
     const [formData, setFormData] = useState<Partial<CustomerFormData>>({
         // Product / Location
+        branch_id: initialData?.branch_id || undefined,
+        center_id: initialData?.center_id || undefined,
+        grp_id: initialData?.grp_id || undefined,
         location: initialData?.location || '',
         product_type: initialData?.product_type || '',
         base_product: initialData?.base_product || '',
@@ -147,6 +152,9 @@ export function CustomerForm({ onClose, onSubmit, initialData }: CustomerFormPro
                 if (initialData?.province && data.province_districts_map) {
                     setFilteredDistricts(data.province_districts_map[initialData.province] || []);
                 }
+                if (initialData?.branch_id && data.centers) {
+                    setFilteredCenters(data.centers.filter((c: any) => c.branch_id === initialData.branch_id));
+                }
             }
         } catch (error) {
             console.error("Failed to load constants", error);
@@ -157,8 +165,8 @@ export function CustomerForm({ onClose, onSubmit, initialData }: CustomerFormPro
         const { name, value, type } = e.target;
         let val: any = value;
 
-        if (type === 'number') {
-            val = value === '' ? undefined : parseFloat(value);
+        if (name === 'branch_id' || name === 'center_id' || name === 'grp_id' || type === 'number') {
+            val = value === '' ? undefined : parseInt(value);
         } else if (type === 'checkbox') {
             val = (e.target as HTMLInputElement).checked;
         }
@@ -173,10 +181,25 @@ export function CustomerForm({ onClose, onSubmit, initialData }: CustomerFormPro
             setFilteredDistricts(constants.province_districts_map[value] || []);
             setFormData(prev => ({ ...prev, district: '' }));
         }
+
+        // Dependent logic for Branch -> Center
+        if (name === 'branch_id') {
+            const branchId = parseInt(value);
+            if (constants?.centers) {
+                setFilteredCenters(constants.centers.filter((c: any) => c.branch_id === branchId));
+            } else {
+                setFilteredCenters([]);
+            }
+            setFormData(prev => ({ ...prev, branch_id: branchId, center_id: undefined }));
+        }
     };
 
     const validate = () => {
         const errors: Record<string, string> = {};
+
+        // Required Product / Location Details
+        if (!formData.branch_id) errors.branch_id = 'Branch is required';
+        if (!formData.center_id) errors.center_id = 'Center is required';
 
         // Required Personal Details
         if (!formData.title) errors.title = 'Title is required';
@@ -254,16 +277,34 @@ export function CustomerForm({ onClose, onSubmit, initialData }: CustomerFormPro
                 {/* Main Form Area */}
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-10 space-y-12 scroll-smooth scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800">
 
-                    {/* Location/Product Assignment (Required logic mapping)
+                    {/* Location/Product Assignment (Required logic mapping) */}
                     <div className="bg-blue-50/30 dark:bg-blue-900/10 p-6 md:p-8 rounded-[1.5rem] border border-blue-100 dark:border-blue-900/30">
                         <SectionHeader icon={Building} title="Product & Location Assignment" />
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <FormSelect
+                                label="Branch"
+                                name="branch_id"
+                                options={constants?.branches?.map((b: any) => ({ value: b.id, label: b.branch_name })) || []}
+                                required
+                                error={fieldErrors.branch_id}
+                                icon={MapPin}
+                                value={formData.branch_id}
+                                onChange={handleChange}
+                            />
+                            <FormSelect
+                                label="Center"
+                                name="center_id"
+                                options={filteredCenters?.map((c: any) => ({ value: c.id, label: c.center_name })) || []}
+                                required
+                                error={fieldErrors.center_id}
+                                icon={Building}
+                                value={formData.center_id}
+                                onChange={handleChange}
+                            />
                             <FormInput label="Location" name="location" placeholder="e.g. Colombo CSU-1" icon={MapPin} value={formData.location} onChange={handleChange} />
                             <FormInput label="Product Type" name="product_type" placeholder="e.g. Micro Finance" value={formData.product_type} onChange={handleChange} />
-                            <FormInput label="Base Product" name="base_product" placeholder="e.g. Loan A" value={formData.base_product} onChange={handleChange} />
-                            <FormInput label="PCSU/CSU Code" name="pcsu_csu_code" placeholder="e.g. CS001" value={formData.pcsu_csu_code} onChange={handleChange} />
                         </div>
-                    </div> */}
+                    </div>
 
                     {/* Personal Details */}
                     <div>

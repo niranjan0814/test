@@ -2,6 +2,9 @@ export interface Customer {
     id: string;
 
     // Product / Location Details
+    branch_id?: number;
+    center_id?: number;
+    grp_id?: number;
     location?: string;
     product_type?: string;
     base_product?: string;
@@ -64,6 +67,11 @@ export interface Customer {
     center_name?: string;
     branch_name?: string;
     active_loans_count?: number;
+
+    // Relation Objects
+    branch?: any;
+    center?: any;
+    group?: any;
 }
 
 export interface CustomerStats {
@@ -75,6 +83,9 @@ export interface CustomerStats {
 
 export interface CustomerFormData {
     // Product / Location Details
+    branch_id?: number;
+    center_id?: number;
+    grp_id?: number;
     location?: string;
     product_type?: string;
     base_product?: string;

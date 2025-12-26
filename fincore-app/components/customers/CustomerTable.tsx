@@ -18,7 +18,7 @@ export function CustomerTable({ customers, onEdit, onDelete, onViewDetails, sele
                 <div className="grid grid-cols-12 gap-4 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
                     <div className="col-span-4">Customer</div>
                     <div className="col-span-3">Contact</div>
-                    <div className="col-span-3">Group</div>
+                    <div className="col-span-3">Branch/Center</div>
                     <div className="col-span-1">Status</div>
                     <div className="col-span-1">Action</div>
                 </div>
@@ -60,10 +60,27 @@ export function CustomerTable({ customers, onEdit, onDelete, onViewDetails, sele
                                 )}
                             </div>
 
-                            {/* Group */}
-                            <div className="col-span-3">
-                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{customer.group_name || '-'}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{customer.center_name || '-'}</p>
+                            {/* Branch/Center/Group */}
+                            <div className="col-span-3 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                    {customer.branch?.branch_name || customer.branch_name || 'No Branch'}
+                                    {customer.branch_id && <span className="text-[10px] text-gray-400 font-normal ml-1">#{customer.branch_id}</span>}
+                                </p>
+                                <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    <span className="truncate">
+                                        {customer.center?.center_name || customer.center_name || 'No Center'}
+                                        {customer.center_id && <span className="text-[10px] text-gray-400 font-normal ml-0.5">#{customer.center_id}</span>}
+                                    </span>
+                                    {(customer.group?.group_name || customer.group_name || customer.grp_id) && (
+                                        <>
+                                            <span className="text-gray-300 dark:text-gray-600">•</span>
+                                            <span className="truncate">
+                                                {customer.group?.group_name || customer.group_name || 'No Group'}
+                                                {customer.grp_id && <span className="text-[10px] text-gray-400 font-normal ml-0.5">#{customer.grp_id}</span>}
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Status */}

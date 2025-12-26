@@ -113,6 +113,9 @@ class Customer extends Model
 
     protected $fillable = [
         // Product / Location Details
+        'branch_id',
+        'center_id',
+        'grp_id',
         'location',
         'product_type',
         'base_product',
@@ -168,9 +171,28 @@ class Customer extends Model
     ];
 
     protected $casts = [
+        'branch_id' => 'integer',
+        'center_id' => 'integer',
+        'grp_id' => 'integer',
         'health_info' => 'array',
         'date_of_birth' => 'date',
         'monthly_income' => 'decimal:2',
         'preferred_address' => 'boolean',
     ];
+
+    // Relationships
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id');
+    }
+
+    public function center()
+    {
+        return $this->belongsTo(Center::class, 'center_id');
+    }
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class, 'grp_id');
+    }
 }
