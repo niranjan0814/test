@@ -91,9 +91,9 @@ export default function BranchManagementPage() {
 
     // Filter branches based on search
     const filteredBranches = branches.filter(branch =>
-        branch.branch_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        branch.branch_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        branch.location.toLowerCase().includes(searchTerm.toLowerCase())
+        (branch.branch_name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (branch.branch_id ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (branch.location ?? '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // Calculate statistics

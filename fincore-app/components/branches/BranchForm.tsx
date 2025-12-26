@@ -216,8 +216,16 @@ export function BranchForm({ isOpen, onClose, onSave, initialData }: BranchFormP
                         <div>
                             <label className="block font-semibold text-gray-900 mb-2 text-sm">Branch Manager *</label>
                             <select
-                                value={formData.manager_name}
-                                onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })}
+                                value={formData.manager_name} // Keeping name as value for display if desired, or switch to ID
+                                onChange={(e) => {
+                                    const selectedName = e.target.value;
+                                    const selectedManager = managers.find(m => m.full_name === selectedName);
+                                    setFormData({
+                                        ...formData,
+                                        manager_name: selectedName,
+                                        manager_staff_id: selectedManager ? selectedManager.staff_id : ''
+                                    });
+                                }}
                                 className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white ${errors.manager_name ? 'border-red-500' : 'border-gray-300'}`}
                             >
                                 <option value="">Select Manager</option>

@@ -223,10 +223,12 @@ export function ViewGroups() {
                 }}
                 onSubmit={selectedGroup ? handleUpdateGroup : handleCreateGroup}
                 initialData={selectedGroup ? {
+                    id: selectedGroup.id,
                     group_name: selectedGroup.group_name,
                     center_id: selectedGroup.center_id,
                     branch_id: selectedGroup.branch_id,
-                    status: selectedGroup.status
+                    status: selectedGroup.status,
+                    customer_ids: selectedGroup.customers?.map(c => c.id.toString())
                 } : null}
             />
 

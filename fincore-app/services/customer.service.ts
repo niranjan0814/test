@@ -5,12 +5,22 @@ export const customerService = {
     /**
      * Get all customers with optional filters
      */
-    getCustomers: async (filters?: { full_name?: string; customer_code?: string; gender?: string }): Promise<Customer[]> => {
+    getCustomers: async (filters?: {
+        full_name?: string;
+        customer_code?: string;
+        gender?: string;
+        center_id?: string;
+        branch_id?: string;
+        grp_id?: string;
+    }): Promise<Customer[]> => {
         try {
             const params = new URLSearchParams();
             if (filters?.full_name) params.append('full_name', filters.full_name);
             if (filters?.customer_code) params.append('customer_code', filters.customer_code);
             if (filters?.gender) params.append('gender', filters.gender);
+            if (filters?.center_id) params.append('center_id', filters.center_id);
+            if (filters?.branch_id) params.append('branch_id', filters.branch_id);
+            if (filters?.grp_id) params.append('grp_id', filters.grp_id);
 
             const queryString = params.toString();
             const url = `${API_BASE_URL}/customers${queryString ? `?${queryString}` : ''}`;

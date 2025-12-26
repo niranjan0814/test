@@ -60,10 +60,22 @@ class GroupController extends Controller
             $validated = $request->validate([
                 'group_name' => 'required|string|max:255|unique:groups,group_name',
                 'center_id' => 'required|integer|exists:centers,id',
+                'customer_ids' => 'nullable|array',
+                'customer_ids.*' => 'exists:customers,id'
             ]);
 
             $group = Group::create($validated);
             $group->load(['center']);
+
+            // Update Customers' group, center, and branch assignment
+            if (!empty($validated['customer_ids'])) {
+                \App\Models\Customer::whereIn('id', $validated['customer_ids'])
+                    ->update([
+                        'grp_id' => $group->id,
+                        'center_id' => $group->center_id,
+                        'branch_id' => $group->center->branch_id ?? null
+                    ]);
+            }
 
             return response()->json([
                 'status_code' => 2010,
@@ -167,10 +179,28 @@ class GroupController extends Controller
                     Rule::unique('groups', 'group_name')->ignore($group->id)
                 ],
                 'center_id' => 'sometimes|required|integer|exists:centers,id',
+                'customer_ids' => 'nullable|array',
+                'customer_ids.*' => 'exists:customers,id'
             ]);
 
             $group->update($validated);
             $group->load(['center']);
+
+            // Sync Customers' group assignment
+            if (isset($validated['customer_ids'])) {
+                // Remove group ID from customers previously in this group
+                \App\Models\Customer::where('grp_id', $group->id)->update(['grp_id' => null]);
+
+                // Add group ID to new set of customers
+                if (!empty($validated['customer_ids'])) {
+                    \App\Models\Customer::whereIn('id', $validated['customer_ids'])
+                        ->update([
+                            'grp_id' => $group->id,
+                            'center_id' => $group->center_id,
+                            'branch_id' => $group->center->branch_id ?? null
+                        ]);
+                }
+            }
 
             return response()->json([
                 'status_code' => 2000,

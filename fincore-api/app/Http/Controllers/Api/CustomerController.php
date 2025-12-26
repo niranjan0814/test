@@ -171,6 +171,18 @@ class CustomerController extends Controller
             $query->where('gender', $request->gender);
             $isFiltered = true;
         }
+        if ($request->has('center_id')) {
+            $query->where('center_id', $request->center_id);
+            $isFiltered = true;
+        }
+        if ($request->has('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+            $isFiltered = true;
+        }
+        if ($request->has('grp_id')) {
+            $query->where('grp_id', $request->grp_id);
+            $isFiltered = true;
+        }
         // Add more filters as needed
 
         $query->with(['branch', 'center', 'group']);

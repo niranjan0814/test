@@ -78,7 +78,7 @@ export function GroupTable({ groups, totalGroups, onEdit, onViewMembers }: Group
                                     onClick={() => onViewMembers(group)}
                                     className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                                 >
-                                    {group.member_count || group.members?.length || 0} Members
+                                    {group.customers?.length || group.member_count || 0} Members
                                 </button>
                                 <p className="text-xs text-gray-500">View details</p>
                             </div>
@@ -86,8 +86,8 @@ export function GroupTable({ groups, totalGroups, onEdit, onViewMembers }: Group
                             {/* Status */}
                             <div className="col-span-1">
                                 <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium capitalize ${group.status === 'active'
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-gray-100 text-gray-700'
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-gray-100 text-gray-700'
                                     }`}>
                                     {group.status}
                                 </span>

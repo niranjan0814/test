@@ -36,7 +36,41 @@ export function GroupMemberModal({ isOpen, onClose, group }: GroupMemberModalPro
                 </div>
 
                 <div className="p-6">
-                    {members.length > 0 ? (
+                    {group.customers && group.customers.length > 0 ? (
+                        <div className="space-y-3">
+                            {group.customers.map((customer) => (
+                                <div
+                                    key={customer.id}
+                                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-100">
+                                            <span className="text-white text-base font-bold">
+                                                {customer.full_name.charAt(0).toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-gray-900">{customer.full_name}</p>
+                                            <p className="text-xs text-gray-500 font-mono uppercase">{customer.customer_code}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span
+                                            className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold capitalize ${customer.status === 'active'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-red-100 text-red-700'
+                                                }`}
+                                        >
+                                            {customer.status || 'Active'}
+                                        </span>
+                                        <p className="text-[10px] text-gray-400 mt-1 uppercase font-semibold">
+                                            {customer.city} • {customer.district}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : members.length > 0 ? (
                         <div className="space-y-3">
                             {members.map((member) => (
                                 <div
@@ -57,8 +91,8 @@ export function GroupMemberModal({ isOpen, onClose, group }: GroupMemberModalPro
                                     <div className="text-right">
                                         <span
                                             className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium capitalize ${member.status === 'active'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-gray-100 text-gray-700'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-gray-100 text-gray-700'
                                                 }`}
                                         >
                                             {member.status}

@@ -72,9 +72,14 @@ export function CenterTable({ centers, totalCenters, getTemporaryAssignment, onE
                                     <div className="col-span-2">
                                         <div className="space-y-1">
                                             {center.open_days?.map((s, i) => (
-                                                <div key={i} className="flex gap-2 text-xs">
-                                                    <span className="font-medium text-gray-700">{s.day}</span>
-                                                    <span className="text-gray-500">{s.time}</span>
+                                                <div key={i} className="flex flex-col text-xs">
+                                                    <div className="flex gap-2">
+                                                        <span className="font-medium text-gray-700">{s.day}</span>
+                                                        <span className="text-gray-500">{s.time}</span>
+                                                    </div>
+                                                    {s.date && (
+                                                        <span className="text-[10px] text-gray-400 font-mono">{s.date}</span>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -120,12 +125,12 @@ export function CenterTable({ centers, totalCenters, getTemporaryAssignment, onE
 
                                     {/* Actions */}
                                     <div className="col-span-2 flex justify-end gap-2">
-                                        <button
+                                        {/* <button
                                             onClick={() => onViewSchedule(center.id)}
                                             className="p-1 px-2 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
                                         >
                                             Schedule
-                                        </button>
+                                        </button> */}
                                         <button
                                             onClick={() => onEdit(center.id)}
                                             className="p-1 px-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors"

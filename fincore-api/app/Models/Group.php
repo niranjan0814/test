@@ -18,8 +18,15 @@ class Group extends Model
         'customer_ids' => 'array',
     ];
     
+    protected $with = ['customers'];
+
     public function center()
     {
         return $this->belongsTo(\App\Models\Center::class);
+    }
+
+    public function customers()
+    {
+        return $this->hasMany(\App\Models\Customer::class, 'grp_id');
     }
 }

@@ -80,7 +80,26 @@ class CenterController extends Controller
                 'status' => 'nullable|string|in:active,inactive',
             ]);
 
+            // Auto-generate CSU_id if not provided
+            if (empty($validated['CSU_id'])) {
+                $latestCenter = Center::latest('id')->first();
+                $nextId = $latestCenter ? $latestCenter->id + 1 : 1;
+                $validated['CSU_id'] = 'CSU' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+            }
+
             $center = Center::create($validated);
+
+            // Update Field Officer's assignment
+            if (!empty($center->staff_id)) {
+                $staff = \App\Models\Staff::where('staff_id', $center->staff_id)->first();
+                if ($staff) {
+                    $staff->update([
+                        'center_id' => $center->id,
+                        'branch_id' => $center->branch_id
+                    ]);
+                }
+            }
+
             $center->load(['branch', 'staff']);
 
             return response()->json([
@@ -154,6 +173,18 @@ class CenterController extends Controller
             ]);
 
             $center->update($validated);
+
+            // Update Field Officer's assignment on update
+            if (!empty($center->staff_id)) {
+                $staff = \App\Models\Staff::where('staff_id', $center->staff_id)->first();
+                if ($staff) {
+                    $staff->update([
+                        'center_id' => $center->id,
+                        'branch_id' => $center->branch_id
+                    ]);
+                }
+            }
+
             $center->load(['branch', 'staff']);
 
             return response()->json([

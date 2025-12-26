@@ -1,3 +1,5 @@
+import { Customer } from './customer.types';
+
 export interface GroupMember {
     id: string;
     name: string;
@@ -29,13 +31,16 @@ export interface Group {
         branch_name: string;
     };
     members?: GroupMember[];
+    customers?: Customer[];
 }
 
 export interface GroupFormData {
+    id?: number;
     group_name: string;
     center_id: string;
     branch_id?: string;
     status?: 'active' | 'inactive';
+    customer_ids?: string[];
 }
 
 export interface GroupStats {

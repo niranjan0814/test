@@ -108,6 +108,7 @@ class BranchController extends Controller
                 'phone' => ['required', 'string', 'max:20', 'regex:/^(\+94|0)?[0-9]{9}$/'], // Validates SL format mostly
                 'email' => 'required|email|max:255',
                 'manager_name' => 'required|string|max:255',
+                'manager_staff_id' => 'nullable|string',
                 'staff_ids' => 'nullable|array',
                 'staff_ids.*' => 'string|max:50',
             ], [
@@ -124,6 +125,20 @@ class BranchController extends Controller
 
             // Create branch
             $branch = Branch::create($validated);
+
+            // Update Manager's Branch ID if provided
+            if (!empty($request->manager_staff_id)) {
+                $manager = \App\Models\Staff::where('staff_id', $request->manager_staff_id)->first();
+                if ($manager) {
+                    $manager->update(['branch_id' => $branch->id]);
+                    Log::info('Updated Manager Branch ID', [
+                        'manager_id' => $manager->staff_id,
+                        'branch_id' => $branch->id
+                    ]);
+                } else {
+                    Log::warning('Manager not found for branch assignment', ['staff_id' => $request->manager_staff_id]);
+                }
+            }
 
             // Log successful creation
             Log::info('Branch created successfully', [
@@ -275,6 +290,7 @@ class BranchController extends Controller
                 'phone' => ['required', 'string', 'max:20', 'regex:/^(\+94|0)?[0-9]{9}$/'],
                 'email' => 'required|email|max:255',
                 'manager_name' => 'required|string|max:255',
+                'manager_staff_id' => 'nullable|string',
                 'staff_ids' => 'nullable|array',
                 'staff_ids.*' => 'string|max:50',
             ], [
@@ -284,6 +300,16 @@ class BranchController extends Controller
 
             // Update branch
             $branch->update($validated);
+
+            // Update Manager's Branch ID if provided
+            if (!empty($request->manager_staff_id)) {
+                // Optional: Clear branch_id from other staff of this branch? 
+                // For now, just ensure the specific manager is assigned.
+                $manager = \App\Models\Staff::where('staff_id', $request->manager_staff_id)->first();
+                if ($manager) {
+                    $manager->update(['branch_id' => $branch->id]);
+                }
+            }
 
             // Log update
             Log::info('Branch updated successfully', [

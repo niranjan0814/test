@@ -33,6 +33,7 @@ export interface BranchFormData {
     phone: string;
     email: string;
     manager_name: string;
+    manager_staff_id?: string;
     staff_ids?: string[];
 }
 
