@@ -6,6 +6,7 @@ import { Header } from "./Header";
 import { ThemeProvider } from "../../contexts/ThemeContext";
 import { usePathname, useRouter } from "next/navigation";
 import { authService } from "../../services/auth.service";
+import { Toaster } from 'react-hot-toast';
 
 export type Page =
     | 'dashboard' | 'branches' | 'centers' | 'groups' | 'customers'
@@ -78,6 +79,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             'dashboard': '/',
             'branches': '/branches',
             'centers': '/centers',
+            'meeting-scheduling': '/meeting-scheduling',
             'groups': '/groups',
             'customers': '/customers',
         };
@@ -99,6 +101,30 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <ThemeProvider>
+            <Toaster
+                position="top-right"
+                toastOptions={{
+                    duration: 4000,
+                    style: {
+                        background: '#fff',
+                        color: '#363636',
+                    },
+                    success: {
+                        duration: 3000,
+                        iconTheme: {
+                            primary: '#10b981',
+                            secondary: '#fff',
+                        },
+                    },
+                    error: {
+                        duration: 4000,
+                        iconTheme: {
+                            primary: '#ef4444',
+                            secondary: '#fff',
+                        },
+                    },
+                }}
+            />
             <div className="flex h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
                 <Sidebar
                     currentPage={getCurrentPage()}

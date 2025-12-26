@@ -214,6 +214,7 @@ class RolePermissionSeeder extends Seeder
                 'admins.delete',
                 'roles.view',
                 'permissions.view',
+                
                 'centers.view',
                 'centers.create',
                 'centers.edit',
@@ -251,6 +252,11 @@ class RolePermissionSeeder extends Seeder
                 'admins.delete',
                 'roles.view',
                 'permissions.view',
+                'centers.delete',
+
+                'centers.view',
+                'centers.create',
+                'centers.edit',
                 'centers.delete',
             ])->get();
             $admin->syncPermissions($adminPermissions);

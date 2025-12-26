@@ -1,7 +1,11 @@
+'use client'
+
 import React from 'react';
-import { Building2, MapPin, Edit, Trash2 } from 'lucide-react';
+import { Building2, Edit, Trash2, MapPin } from 'lucide-react';
 import { Branch } from '../../types/branch.types';
 import { colors } from '../../themes/colors';
+import { usePagination } from '../../hooks/usePagination';
+import { Pagination } from '../common/Pagination';
 
 interface BranchTableProps {
     branches: Branch[];
@@ -11,6 +15,17 @@ interface BranchTableProps {
 }
 
 export function BranchTable({ branches, totalBranches, onEdit, onDelete }: BranchTableProps) {
+    const {
+        currentPage,
+        itemsPerPage,
+        startIndex,
+        endIndex,
+        handlePageChange,
+        handleItemsPerPageChange
+    } = usePagination({ totalItems: branches.length });
+
+    const currentBranches = branches.slice(startIndex, endIndex);
+
     return (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="bg-gray-50 border-b border-gray-200 px-6 py-3">
@@ -24,12 +39,12 @@ export function BranchTable({ branches, totalBranches, onEdit, onDelete }: Branc
             </div>
 
             <div className="divide-y divide-gray-100">
-                {branches.length === 0 ? (
+                {currentBranches.length === 0 ? (
                     <div className="px-6 py-8 text-center text-gray-500 text-sm">
                         No branches found.
                     </div>
                 ) : (
-                    branches.map((branch) => (
+                    currentBranches.map((branch) => (
                         <div key={branch.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                             <div className="grid grid-cols-12 gap-4 items-center">
                                 {/* Branch ID */}
@@ -81,25 +96,15 @@ export function BranchTable({ branches, totalBranches, onEdit, onDelete }: Branc
                 )}
             </div>
 
-            {/* Pagination placeholder - Update logic later if backend supports pagination */}
-            <div className="bg-gray-50 border-t border-gray-200 px-6 py-3">
-                <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600">
-                        Showing <span className="font-medium">{branches.length}</span> of <span className="font-medium">{totalBranches}</span> branches
-                    </p>
-                    <div className="flex gap-2">
-                        <button disabled className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-400 bg-gray-100 cursor-not-allowed">
-                            Previous
-                        </button>
-                        <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm">
-                            1
-                        </button>
-                        <button disabled className="px-3 py-1 border border-gray-300 rounded text-sm text-gray-400 bg-gray-100 cursor-not-allowed">
-                            Next
-                        </button>
-                    </div>
-                </div>
-            </div>
+            {/* Pagination */}
+            <Pagination
+                currentPage={currentPage}
+                totalItems={branches.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                itemName="branches"
+            />
         </div>
     );
 }

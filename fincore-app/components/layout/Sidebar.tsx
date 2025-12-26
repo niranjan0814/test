@@ -20,7 +20,8 @@ import {
     Receipt,
     ChevronLeft,
     ChevronRight,
-    Download
+    Download,
+    Calendar
 } from 'lucide-react';
 import { Page } from './MainLayout';
 
@@ -56,9 +57,21 @@ export function Sidebar({ currentPage, onNavigate, isOpen, userRole }: SidebarPr
             roles: ['super_admin', 'admin']
         },
         {
-            id: 'centers',
+            id: 'centers-section' as Page,
             label: 'Centers (CSU)',
-            icon: <Users className="w-5 h-5" />
+            icon: <Users className="w-5 h-5" />,
+            submenu: [
+                {
+                    id: 'centers',
+                    label: 'Schedule',
+                    icon: <ClipboardList className="w-4 h-4" />
+                },
+                {
+                    id: 'meeting-scheduling',
+                    label: 'Meeting Schedule',
+                    icon: <ClipboardList className="w-4 h-4" />
+                }
+            ]
         },
         {
             id: 'groups',
@@ -106,8 +119,70 @@ export function Sidebar({ currentPage, onNavigate, isOpen, userRole }: SidebarPr
             return null;
         }
 
-        const isActive = currentPage === item.id;
+        const hasSubmenu = item.submenu && item.submenu.length > 0;
+        const isActive = currentPage === item.id || (hasSubmenu && item.submenu?.some(sub => currentPage === sub.id));
+        const isExpanded = expandedMenus.includes(item.id as string);
 
+        if (hasSubmenu) {
+            return (
+                <div key={item.id}>
+                    {isCollapsed ? (
+                        <button
+                            onClick={() => toggleMenu(item.id as string)}
+                            className={`w-full flex items-center justify-center px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all group relative ${isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : ''}`}
+                            title={item.label}
+                        >
+                            <div className={`${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'} group-hover:text-gray-700 dark:group-hover:text-gray-300`}>
+                                {item.icon}
+                            </div>
+                            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                                {item.label}
+                            </div>
+                        </button>
+                    ) : (
+                        <>
+                            <button
+                                onClick={() => toggleMenu(item.id as string)}
+                                className={`w-full flex items-center justify-between px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all group ${isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : ''}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'} group-hover:text-gray-700 dark:group-hover:text-gray-300`}>
+                                        {item.icon}
+                                    </div>
+                                    <span className="text-sm font-medium">{item.label}</span>
+                                </div>
+                                <ChevronDown
+                                    className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                />
+                            </button>
+                            {isExpanded && (
+                                <div className="ml-8 mt-1 space-y-0.5 border-l-2 border-gray-200 dark:border-gray-700 pl-2">
+                                    {item.submenu?.map(subItem => {
+                                        if (subItem.roles && !subItem.roles.includes(userRole)) return null;
+                                        const isSubActive = currentPage === subItem.id;
+                                        return (
+                                            <button
+                                                key={subItem.id}
+                                                onClick={() => onNavigate(subItem.id)}
+                                                className={`w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all text-sm ${isSubActive
+                                                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
+                                                    }`}
+                                            >
+                                                {subItem.icon}
+                                                <span>{subItem.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            );
+        }
+
+        // Regular menu item
         return (
             <button
                 key={item.id}

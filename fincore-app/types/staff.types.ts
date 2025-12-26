@@ -7,6 +7,14 @@ export interface User {
     status: 'Active' | 'Inactive' | 'Blocked';
 }
 
+export interface Staff {
+    staff_id: string; // Primary Key
+    full_name: string;
+    email_id: string;
+    branch_id?: string;
+    // Add other fields as needed
+}
+
 export interface Role {
     id: number;
     name: string;

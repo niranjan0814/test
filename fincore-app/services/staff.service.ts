@@ -1,4 +1,4 @@
-import { User, Permission, Role } from '../types/staff.types';
+import { User, Permission, Role, Staff } from '../types/staff.types';
 import { API_BASE_URL, getHeaders } from './api.config';
 
 export const staffService = {
@@ -25,6 +25,19 @@ export const staffService = {
             }));
         } catch (error) {
             console.error("Error fetching users", error);
+            return [];
+        }
+    },
+
+    getStaffList: async (): Promise<Staff[]> => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/staffs`, { headers: getHeaders() });
+            if (!response.ok) return [];
+
+            const json = await response.json();
+            return json.data || [];
+        } catch (error) {
+            console.error("Error fetching staff list", error);
             return [];
         }
     },
