@@ -124,8 +124,7 @@ export function RoleModal({ isOpen, onClose, onSave, editingRole, privileges, de
     const hasUnauthorized = permissions.some(row =>
         Object.entries(row.permissions).some(([privName, isChecked]) => {
             if (!isChecked) return false;
-            const fullPermission = `${row.module}.${privName}`;
-            return !authService.hasRole('super_admin') && !authService.hasPermission(fullPermission);
+            return !authService.hasModulePermission(row.module, privName);
         })
     );
 

@@ -117,6 +117,8 @@ class RoleService
                 'level' => $data['level'] ?? $role->level,
                 'hierarchy' => $data['hierarchy'] ?? $role->hierarchy,
                 'is_default' => $data['is_default'] ?? $role->is_default,
+                'is_editable' => $data['is_editable'] ?? $role->is_editable,
+                'restrictions' => $data['restrictions'] ?? $role->restrictions,
             ]);
 
             if (isset($data['permissions'])) {
@@ -124,6 +126,8 @@ class RoleService
                 $this->validateAdminPermissions($data['permissions']);
                 $role->syncPermissions($data['permissions']);
             }
+
+            app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
             return $role->refresh();
         });

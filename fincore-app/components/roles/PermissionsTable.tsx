@@ -35,8 +35,7 @@ export function PermissionsTable({ permissions, availablePrivileges, onChange, r
                                 </td>
                                 {availablePrivileges.map(priv => {
                                     const isChecked = perm.permissions[priv.name] || false;
-                                    const fullPermission = `${perm.module}.${priv.name}`;
-                                    const userHasPermission = authService.hasRole('super_admin') || authService.hasPermission(fullPermission);
+                                    const userHasPermission = authService.hasModulePermission(perm.module, priv.name);
                                     const isUnauthorizedAssignment = isChecked && !userHasPermission;
 
                                     return (

@@ -161,11 +161,16 @@ export const roleService = {
         matrix.forEach(modulePerm => {
             Object.entries(modulePerm.permissions).forEach(([action, value]) => {
                 if (value) {
-                    const match = allPermissions.find(p =>
-                        (p.module === modulePerm.module || (!p.module && modulePerm.module === 'System')) &&
-                        (p.name.endsWith('.' + action) || p.name === action)
-                    );
-                    if (match) ids.push(match.id);
+                    // Find all permissions that match this module and action
+                    // Supports exact match: 'users.view' 
+                    // Supports nested matches: 'users.roles.manage' -> matches action 'manage' for module 'users'
+                    const matches = allPermissions.filter(p => {
+                        const isSameModule = p.module === modulePerm.module || (!p.module && modulePerm.module === 'System');
+                        const isActionMatch = p.name.endsWith('.' + action) || p.name === action;
+                        return isSameModule && isActionMatch;
+                    });
+
+                    matches.forEach(match => ids.push(match.id));
                 }
             });
         });

@@ -101,6 +101,28 @@ export const authService = {
         }
     },
 
+    // Check if user possesses any permission in a module matching an action suffix
+    hasModulePermission: (module: string, action: string): boolean => {
+        if (typeof window === 'undefined') return false;
+        if (authService.hasRole('super_admin')) return true;
+
+        const permissionsStr = localStorage.getItem('permissions');
+        if (!permissionsStr) return false;
+
+        try {
+            const permissions = JSON.parse(permissionsStr);
+            if (!Array.isArray(permissions)) return false;
+
+            return permissions.some((p: any) => {
+                const isSameModule = p.module === module || (!p.module && module === 'System');
+                const isActionMatch = p.name.endsWith('.' + action) || p.name === action;
+                return isSameModule && isActionMatch;
+            });
+        } catch (e) {
+            return false;
+        }
+    },
+
     hasRole: (roleName: string): boolean => {
         if (typeof window === 'undefined') return false;
         const rolesStr = localStorage.getItem('roles');
